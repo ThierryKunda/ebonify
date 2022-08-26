@@ -1,4 +1,4 @@
-use crate::pre_teatment::*;
+use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator}};
 
 #[test]
     fn split_lines_test() {
@@ -19,4 +19,37 @@ use crate::pre_teatment::*;
         let content_test = "float = integer, '.', integer;".to_string();
         let expected_res = vec!["float", "integer, '.', integer;"];
         assert_eq!(split_members_aux(content_test), expected_res);
+    }
+
+    #[test]
+    fn tokenize_test() {
+        let some_literal = "\"a\"".to_string();
+        let altern = "|".to_string();
+        let opening_repet = "{".to_string();
+
+        let a_token = tokenize(some_literal);
+        let altern_token = tokenize(altern);
+        let op_repet_token = tokenize(opening_repet);
+
+        match a_token {
+            Token::Rl(rl) => match rl {
+                crate::ebnf_syntax::Rule::Literal(lit) => assert_eq!(lit, "a".to_string()),
+                _ => assert!(false),
+            },
+            _ => assert!(false),
+        }
+        match altern_token {
+            Token::Op(op) => match op {
+                Operator::Alternation => assert!(true),
+                _ => assert!(false),
+            },
+            _ => assert!(false),
+        }
+        match op_repet_token {
+            Token::Op(op) => match op {
+                Operator::RepetitionL => assert!(true),
+                _ => assert!(false),
+            },
+            _ => assert!(false),
+        }
     }

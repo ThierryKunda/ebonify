@@ -1,5 +1,6 @@
 use regex;
 use std::fs;
+use crate::ebnf_syntax::*;
 use crate::error::PreTreatmentError;
 
 pub fn split_lines(filepath: &str) -> Result<Vec<String>, PreTreatmentError> {
@@ -38,4 +39,20 @@ fn split_members(rules: Vec<String>) -> Vec<Vec<String>> {
         members.push(split_members_aux(r.to_string()));
     }
     members
+}
+
+pub fn tokenize(token: String) -> Token {
+    let token_as_str = token.as_str();
+    match token_as_str {
+        "," => Token::Op(Operator::Concatenation),
+        "|" => Token::Op(Operator::Alternation),
+        "-" => Token::Op(Operator::Exception),
+        "[" => Token::Op(Operator::OptionalL),
+        "]" => Token::Op(Operator::OptionalR),
+        "{" => Token::Op(Operator::RepetitionL),
+        "}" => Token::Op(Operator::RepetitionR),
+        "(" => Token::Op(Operator::GroupingL),
+        ")" => Token::Op(Operator::GroupingR),
+        s => Token::Rl(Rule::Literal(s.trim_matches('"').to_string())),
+    }
 }
