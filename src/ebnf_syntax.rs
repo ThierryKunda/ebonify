@@ -20,6 +20,7 @@ pub enum Rule {
 pub enum Token {
     Op(Operator),
     Rl(Rule),
+    Invalid,
 }
 
 pub struct EBNF {

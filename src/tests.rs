@@ -24,10 +24,14 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator}};
     #[test]
     fn tokenize_test() {
         let some_literal = "\"a\"".to_string();
+        let ident = "var".to_string();
+        let quote_invalid = "\"mystring".to_string();
         let altern = "|".to_string();
         let opening_repet = "{".to_string();
 
         let a_token = tokenize(some_literal);
+        let var_token = tokenize(ident);
+        let extra_quote_token = tokenize(quote_invalid);
         let altern_token = tokenize(altern);
         let op_repet_token = tokenize(opening_repet);
 
@@ -36,6 +40,17 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator}};
                 crate::ebnf_syntax::Rule::Literal(lit) => assert_eq!(lit, "a".to_string()),
                 _ => assert!(false),
             },
+            _ => assert!(false),
+        }
+        match var_token {
+            Token::Rl(rl) => match rl {
+                crate::ebnf_syntax::Rule::Identifier(idt) => assert_eq!(idt, "var".to_string()),
+                _ => assert!(false),
+            },
+            _ => assert!(false),
+        }
+        match extra_quote_token {
+            Token::Invalid => assert!(true),
             _ => assert!(false),
         }
         match altern_token {

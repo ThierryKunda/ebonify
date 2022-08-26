@@ -53,6 +53,13 @@ pub fn tokenize(token: String) -> Token {
         "}" => Token::Op(Operator::RepetitionR),
         "(" => Token::Op(Operator::GroupingL),
         ")" => Token::Op(Operator::GroupingR),
-        s => Token::Rl(Rule::Literal(s.trim_matches('"').to_string())),
+        s => {
+            if s.starts_with("\"") && s.ends_with("\"") {
+                return Token::Rl(Rule::Literal(s.trim_matches('"').to_string()));
+            } else if s.starts_with("\"") || s.ends_with("\"") {
+                return Token::Invalid;
+            }
+            Token::Rl(Rule::Identifier(s.to_string()))
+        },
     }
 }
