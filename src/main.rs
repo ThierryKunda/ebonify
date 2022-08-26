@@ -55,4 +55,28 @@ mod pre_treatment {
         }
         assert_eq!(lines, vec!["Line 1 : ABCD;", "Line 2 : EFGH;", "Line n : ...;"]);
     }
+
+    fn split_members_aux(rule: String) -> Vec<String>{
+        let rule_split: Vec<&str> = rule.split("=").collect();
+        let rules: Vec<String> = rule_split.iter()
+            .map(|mem| mem.trim())
+            .map(|mem| mem.to_string())
+            .collect();
+        rules
+    }
+
+    #[test]
+    fn split_members_test() {
+        let content_test = "float = integer, '.', integer;".to_string();
+        let expected_res = vec!["float", "integer, '.', integer;"];
+        assert_eq!(split_members_aux(content_test), expected_res);
+    }
+
+    fn split_members(rules: Vec<String>) -> Vec<Vec<String>> {
+        let mut members: Vec<Vec<String>> = Vec::new();
+        for r in rules.iter() {
+            members.push(split_members_aux(r.to_string()));
+        }
+        members
+    }
 }
