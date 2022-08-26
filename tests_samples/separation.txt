@@ -1,0 +1,3 @@
+Line 1 : ABCD;
+Line 2 : EFGH;
+Line n : ...;

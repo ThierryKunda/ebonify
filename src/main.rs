@@ -1,68 +1,58 @@
 use pre_treatment::*;
-use regex;
+pub mod error;
 pub mod ebnf_syntax;
 
 fn main() {
-    let mut content_lines = split_lines("tests_samples/lang_mini.ebnf");
-    remove_block_comments(&mut content_lines);
-    let mut members = split_members(content_lines);
-    sanitize(&mut members);
-    for l in members {
-        if l.len() == 1 {
-            println!("!!!VIDE!!!")
-        } else {
-            for m in l {
-                println!("{}", m);
-            }
+    let lines_res = split_lines("tests_samples/lang_mini.ebnf");
+        match lines_res {
+            Ok(lines) => {
+                for l in lines {
+                    print!("START {l} END");
+                }
+            },
+            Err(err) => {
+                println!("Erreur de traitement : {err}");
+            },
         }
-        // println!("----------------------");
-    }
 }
 
 mod pre_treatment {
-    use std::fs;
-    pub fn split_lines(filepath: &str) -> Vec<String> {
-        let content = fs::read_to_string(filepath).unwrap_or_else(|er| er.to_string());
-        let lines_iterator = content.split(';').into_iter();
-        let mut lines: Vec<String> = Vec::new();
-        lines_iterator.for_each(|el| { lines.push(el.to_string())});
-        return lines;
-    }
+    use regex;
+    use std::{fs, error::Error};
+    use crate::error::PreTreatmentError;
 
-    pub fn remove_block_comments(lines: &mut Vec<String>) -> () {
-        let index = lines.len();
-        for i in 0..(index-1) {
-            match lines.get(i) {
-                Some(v) => if v.contains("(*") && v.contains("*)") {
-                    lines.remove(i);
-                }
-                None => ()
-            }
+    pub fn split_lines(filepath: &str) -> Result<Vec<String>, PreTreatmentError> {
+        let file_content = fs::read_to_string(filepath);
+        let content: String;
+        match file_content {
+            Ok(ct) => {
+                content = ct;
+            },
+            Err(_) => {
+                return Err(PreTreatmentError);
+            },
         }
-    }
-
-    fn sep_members_aux(line: &String) -> Vec<String> {
-        let line_split: Vec<&str> = line.split(" ").collect();
-        return line_split.iter().map(|e| e.to_string()).collect();
-    }
-
-    pub fn split_members(lines: Vec<String>) -> Vec<Vec<String>> {
-        return lines.iter().map(|e| sep_members_aux(e)).collect();
-    }
-
-
-    fn sanit_aux(lines: &mut Vec<String>) {
-       for i in 0..(lines.len()-1) {
-        let m_without_blank = lines.get(i).unwrap().trim().to_string();
-        lines.insert(i, m_without_blank);
-        lines.remove(i+1);
-       }
-    }
-
-    pub fn sanitize(lines: &mut Vec<Vec<String>>) -> () {
-        // let all_tokens: Vec<String> = Vec::new();
-        for l in lines {
-            sanit_aux(l);
+        let re = regex::Regex::new(r".+;").unwrap();
+        let content_str = content.as_str();
+        let matches_iter = re.find_iter(content_str).map(|m| m.as_str());
+        let mut v: Vec<String> = Vec::new();
+        for mat in matches_iter {
+            v.push(mat.to_string())
         }
+        return Ok(v);
+    }
+
+    #[test]
+    fn split_lines_test() {
+        let file_content = split_lines("tests_samples/separation.txt");
+        let lines: Vec<String>;
+        match file_content {
+            Ok(v) => {
+                assert!(v.len() != 0);
+                lines = v;
+            },
+            Err(_) => return,
+        }
+        assert_eq!(lines, vec!["Line 1 : ABCD;", "Line 2 : EFGH;", "Line n : ...;"]);
     }
 }
