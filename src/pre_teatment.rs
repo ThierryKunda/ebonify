@@ -63,3 +63,7 @@ pub fn tokenize(token: String) -> Token {
         },
     }
 }
+
+pub fn tokenize_rule(rule: Vec<String>) -> Vec<Token> {
+    rule.iter().map(|v| tokenize(v.to_string())).collect()
+}

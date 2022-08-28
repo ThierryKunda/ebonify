@@ -11,10 +11,11 @@ pub enum Operator {
 }
 
 pub enum Rule {
-    N,
     Literal(String),
     Identifier(String),
-    Operation(Box<Rule>, Operator),
+    Dual(Box<Rule>, Operator, Box<Rule>),
+    Single(Operator, Box<Rule>, Operator),
+
 }
 
 pub enum Token {
