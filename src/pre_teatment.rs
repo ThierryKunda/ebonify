@@ -74,3 +74,45 @@ pub fn validate_rule(rules: Vec<Token>) -> bool {
         _ => true,
     })
 }
+
+pub fn brackets_paired(operator1: &Operator, operator2: &Operator) -> bool {
+    match (operator1,operator2) {
+        (Operator::OptionalL, Operator::OptionalR) => true,
+        (Operator::GroupingL, Operator::GroupingR) => true,
+        (Operator::RepetitionL, Operator::RepetitionR) => true,
+        _ => false,
+
+    }
+}
+
+pub fn valid_dual_operators(rule: &Vec<Token>) -> bool {
+    let mut operators_list: Vec<&Operator> = Vec::new();
+    for token in rule {
+        match token {
+            Token::Op(op) => operators_list.push(op),
+            _ => (),
+        }
+    }
+    let mut operators_test: Vec<&Operator> = Vec::new();
+    match operators_list.get(0) {
+        Some(v) => operators_test.push(v),
+        None => return true,
+    }
+    let size = operators_list.len();
+    for i in 1..size {
+        let current_op = operators_list.get(i);
+        let last_test_op = operators_test.get(operators_test.len()-1);
+        match (last_test_op, current_op) {
+            (Some(op1), Some(op2)) => {
+                if brackets_paired(op1, op2) {
+                    operators_test.pop();
+                } else {
+                    operators_test.push(op1);
+                }
+            },
+            (Some(op1), None) => operators_test.push(op1),
+            (None, _) => return operators_test.len() == 0,
+        }
+    }
+operators_test.len() == 0
+}

@@ -68,3 +68,26 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator}};
             _ => assert!(false),
         }
     }
+    #[test]
+    fn brackets_paired_test() {
+        assert!(brackets_paired(&Operator::GroupingL, &Operator::GroupingR));
+        assert!(brackets_paired(&Operator::OptionalR, &Operator::OptionalL) == false);
+    }
+
+    #[test]
+    fn valid_dual_operators_test() {
+        let tokens_0: Vec<Token> = Vec::new();
+        let tokens_1: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("}")]);
+        let tokens_2: Vec<Token> = tokenize_rule(vec![String::from("]"), String::from("[")]);
+        let tokens_3: Vec<Token> = tokenize_rule(vec![String::from("("), String::from("["), String::from(")")]);
+    
+        assert!(valid_dual_operators(&tokens_0));
+        assert!(valid_dual_operators(&tokens_1));
+        assert!(!valid_dual_operators(&tokens_2));
+        assert!(!valid_dual_operators(&tokens_3));
+    }
+
+    #[test]
+    fn valid_single_operators() {
+        todo!()
+    }
