@@ -101,16 +101,20 @@ pub fn valid_dual_operators(rule: &Vec<Token>) -> bool {
     let size = operators_list.len();
     for i in 1..size {
         let current_op = operators_list.get(i);
-        let last_test_op = operators_test.get(operators_test.len()-1);
+        let last_test_op = operators_test.last();
         match (last_test_op, current_op) {
             (Some(op1), Some(op2)) => {
                 if brackets_paired(op1, op2) {
                     operators_test.pop();
                 } else {
-                    operators_test.push(op1);
+                    let o = *op1;
+                    operators_test.push(o);
                 }
             },
-            (Some(op1), None) => operators_test.push(op1),
+            (Some(op1), None) => {
+                let o = *op1;
+                operators_test.push(o)
+            },
             (None, _) => return operators_test.len() == 0,
         }
     }
