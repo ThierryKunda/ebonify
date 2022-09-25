@@ -120,3 +120,53 @@ pub fn valid_dual_operators(rule: &Vec<Token>) -> bool {
     }
 operators_test.len() == 0
 }
+
+pub fn valid_single_operators(rule: &Vec<Token>) -> bool {
+    match (rule.first(), rule.last()) {
+        (None, None) => todo!(),
+        (Some(first), Some(last)) => match (first, last) {
+            (Token::Op(a), Token::Op(b)) => match (a,b) {
+                (Operator::Alternation, _) => return false,
+                (Operator::Concatenation, _) => return false,
+                (Operator::Exception, _) => return false,
+                (_, Operator::Alternation) => return false,
+                (_, Operator::Concatenation) => return false,
+                (_, Operator::Exception) => return false,
+                _ => ()
+            },
+            _ => ()
+        },
+        _ => ()
+    }
+
+    let mut i: usize = 0;
+    let rule_size = rule.len();
+
+    while i+1 < rule_size {
+        match (rule.get(i), rule.get(i+1)) {
+            (Some(a), Some(b)) => {
+                match (a,b) {
+                    (Token::Op(x), Token::Op(y)) => {
+                        match (x,y) {
+                            (Operator::Alternation, Operator::Alternation) => return false,
+                            (Operator::Alternation, Operator::Concatenation) => return false,
+                            (Operator::Alternation, Operator::Exception) => return false,
+                            (Operator::Concatenation, Operator::Concatenation) => return false,
+                            (Operator::Concatenation, Operator::Alternation) => return false,
+                            (Operator::Concatenation, Operator::Exception) => return false,
+                            (Operator::Exception, Operator::Exception) => return false,
+                            (Operator::Exception, Operator::Alternation) => return false,
+                            (Operator::Exception, Operator::Concatenation) => return false,
+                            _ => ()
+                        }
+                    },
+                    _ => ()
+                }
+            },
+            _ => ()
+
+        }
+        i += 1;
+    }
+    return true
+}

@@ -88,6 +88,15 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator}};
     }
 
     #[test]
-    fn valid_single_operators() {
-        todo!()
-    }
+fn valid_single_operators_test() {
+    let tokens_0: Vec<Token> = tokenize_rule(vec![String::from("abcd")]);
+    let tokens_1: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("abcd"), String::from("|"), String::from("abcd"), String::from("}")]);
+    let tokens_2: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("bad"), String::from("|"), String::from("|"), String::from("}")]);
+    let tokens_3: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("bad"), String::from(","), String::from("|"), String::from("}")]);
+
+    assert!(valid_single_operators(&tokens_0));
+    assert!(valid_single_operators(&tokens_1));
+    assert!(valid_single_operators(&tokens_2) == false);
+    assert!(valid_single_operators(&tokens_3) == false);
+
+}
