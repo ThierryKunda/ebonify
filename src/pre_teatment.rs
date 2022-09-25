@@ -89,7 +89,15 @@ pub fn valid_dual_operators(rule: &Vec<Token>) -> bool {
     let mut operators_list: Vec<&Operator> = Vec::new();
     for token in rule {
         match token {
-            Token::Op(op) => operators_list.push(op),
+            Token::Op(op) => match op {
+                Operator::OptionalL => operators_list.push(op),
+                Operator::OptionalR => operators_list.push(op),
+                Operator::RepetitionL => operators_list.push(op),
+                Operator::RepetitionR => operators_list.push(op),
+                Operator::GroupingL => operators_list.push(op),
+                Operator::GroupingR => operators_list.push(op),
+                _ => ()
+            },
             _ => (),
         }
     }
