@@ -102,7 +102,7 @@ pub fn valid_dual_operators(rule: &Vec<Token>) -> bool {
         }
     }
     let mut operators_test: Vec<&Operator> = Vec::new();
-    match operators_list.get(0) {
+    match operators_list.first() {
         Some(v) => operators_test.push(v),
         None => return true,
     }
@@ -177,4 +177,48 @@ pub fn valid_single_operators(rule: &Vec<Token>) -> bool {
         i += 1;
     }
     return true
+}
+
+pub fn valid_following_operators(rule: &Vec<Token>) -> bool {
+    if rule.len() == 0 {
+        return true;
+    }
+    let max_index = rule.len() - 1;
+    for i in 0..max_index {
+        match (rule.get(i), rule.get(i+1)) {
+            (None, Some(_)) => (),
+            (_, None) => return true,
+            (Some(tk1), Some(tk2)) => match (tk1, tk2) {
+                (Token::Op(op1), Token::Op(op2)) => match (op1, op2) {
+                    (Operator::GroupingL, Operator::Alternation) => return false,
+                    (Operator::GroupingL, Operator::Concatenation) => return false,
+                    (Operator::GroupingL, Operator::Exception) => return false,
+
+                    (Operator::RepetitionL, Operator::Alternation) => return false,
+                    (Operator::RepetitionL, Operator::Concatenation) => return false,
+                    (Operator::RepetitionL, Operator::Exception) => return false,
+
+                    (Operator::OptionalL, Operator::Alternation) => return false,
+                    (Operator::OptionalL, Operator::Concatenation) => return false,
+                    (Operator::OptionalL, Operator::Exception) => return false,
+                    
+                    (Operator::Alternation, Operator::GroupingR) => return false,
+                    (Operator::Alternation, Operator::RepetitionR) => return false,
+                    (Operator::Alternation, Operator::OptionalR) => return false,
+
+                    (Operator::Concatenation, Operator::GroupingR) => return false,
+                    (Operator::Concatenation, Operator::RepetitionR) => return false,
+                    (Operator::Concatenation, Operator::OptionalR) => return false,
+                    
+                    (Operator::Exception, Operator::GroupingR) => return false,
+                    (Operator::Exception, Operator::RepetitionR) => return false,
+                    (Operator::Exception, Operator::OptionalR) => return false,
+
+                    _ => ()
+                },
+                _ => ()
+            },
+        }
+    }
+    return true;
 }
