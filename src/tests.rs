@@ -114,3 +114,16 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator}};
 
     }
 
+    #[test]
+    fn least_prior_is_unary_test() {
+        let tokens_0: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("123"), String::from("}")]);
+        let tokens_1: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("a"), String::from(","), String::from("b"), String::from("|"), String::from("c"), String::from("}")]);
+        let tokens_2: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("a"), String::from(","), String::from("b"), String::from("}"), String::from("|"), String::from("c")]);
+        let tokens_3: Vec<Token> = tokenize_rule(vec![String::from("a"), String::from(","), String::from("{"), String::from("b"), String::from("|"), String::from("c"), String::from("}")]);
+        
+        assert!(least_prior_is_unary(&tokens_0));
+        assert!(least_prior_is_unary(&tokens_1));
+        assert!(least_prior_is_unary(&tokens_2) == false);
+        assert!(least_prior_is_unary(&tokens_3) == false);
+    }
+
