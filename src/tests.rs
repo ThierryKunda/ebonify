@@ -1,4 +1,4 @@
-use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator}};
+use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator}, ast::*};
 
 #[test]
     fn split_lines_test() {
@@ -80,11 +80,18 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator}};
         let tokens_1: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("}")]);
         let tokens_2: Vec<Token> = tokenize_rule(vec![String::from("]"), String::from("[")]);
         let tokens_3: Vec<Token> = tokenize_rule(vec![String::from("("), String::from("["), String::from(")")]);
+
+        let tokens_ref_1: Vec<&Token> = tokens_1.iter().collect();
+        let tokens_ref_2: Vec<&Token> = tokens_2.iter().collect();
+        let tokens_ref_3: Vec<&Token> = tokens_3.iter().collect();
     
         assert!(valid_dual_operators(&tokens_0));
         assert!(valid_dual_operators(&tokens_1));
         assert!(!valid_dual_operators(&tokens_2));
         assert!(!valid_dual_operators(&tokens_3));
+        assert!(valid_dual_ref_operators(&tokens_ref_1));
+        assert!(!valid_dual_ref_operators(&tokens_ref_2));
+        assert!(!valid_dual_ref_operators(&tokens_ref_3));
     }
 
     #[test]
