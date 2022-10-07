@@ -41,7 +41,7 @@ fn split_members(rules: Vec<String>) -> Vec<Vec<String>> {
     members
 }
 
-pub fn tokenize(token: String) -> Token {
+pub fn tokenize(token: String) -> Token<'static> {
     let token_as_str = token.as_str();
     match token_as_str {
         "," => Token::Op(Operator::Concatenation),
@@ -64,7 +64,7 @@ pub fn tokenize(token: String) -> Token {
     }
 }
 
-pub fn tokenize_rule(rule: Vec<String>) -> Vec<Token> {
+pub fn tokenize_rule(rule: Vec<String>) -> Vec<Token<'static>> {
     rule.iter().map(|v| tokenize(v.to_string())).collect()
 }
 
