@@ -1,4 +1,51 @@
-use crate::{ebnf_syntax::*, pre_teatment::{brackets_paired, valid_dual_operators}};
+use crate::{ebnf_syntax::*, pre_teatment::{brackets_paired}};
+
+
+
+pub fn get_least_prior_binary_index(rule: &Vec<&Token>) -> Option<usize> {
+    if rule.len() < 3 {
+        return None;
+    }
+    if rule.len() == 3 {
+        return Some(1);
+    }
+    let mut test_stack: Vec<&Token> = Vec::new();
+    test_stack.push(rule.first().unwrap());
+    let mut i = 1;
+    while !test_stack.is_empty() && i < rule.len()-1 {
+        match (test_stack.last().unwrap(), rule.get(i).unwrap()) {
+            (Token::Op(last_of_stack), Token::Op(current)) => {
+                match (last_of_stack, current) {
+                    (Operator::RepetitionL, Operator::RepetitionR) |
+                    (Operator::OptionalL, Operator::OptionalR) |
+                    (Operator::GroupingL, Operator::GroupingR) => { test_stack.pop(); },
+                    (_, Operator::Alternation) | (_, Operator::Concatenation) | (_, Operator::Exception) => (),
+                    _ => test_stack.push(rule.get(i).unwrap()),
+                }
+            }
+            _ => ()
+        }
+        i += 1;
+    }
+    for j in i..rule.len()-1 {
+        match rule.get(j).unwrap() {
+            Token::Op(op) => match op {
+                Operator::Alternation | Operator::Concatenation | Operator::Exception => return Some(j),
+                _ => (),
+            }
+            _ => ()
+        }
+    }
+    return None;
+}
+
+pub fn tokens_as_ref<'a>(rule: &'a Vec<Token<'a>>) -> Vec<&'a Token<'a>> {
+    let mut tokens: Vec<&Token> = Vec::new();
+    for tk in rule {
+        tokens.push(tk);
+    }
+    tokens
+}
 
 pub fn least_prior_is_unary(rule: &Vec<Token>) -> bool {
     // We borrow the rule without the "extremities"

@@ -133,4 +133,21 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator}, ast::*};
         assert!(least_prior_is_unary(&tokens_2) == false);
         assert!(least_prior_is_unary(&tokens_3) == false);
     }
+    
+    #[test]
+    fn get_least_prior_binary_index_test() {
+        let tokens_0: Vec<Token> = tokenize_rule(vec![String::from("abc"), String::from("|"), String::from("123")]);
+        let tokens_1: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("abcd"), String::from(","), String::from("zzz"), String::from("}"), String::from(","), String::from("123")]);
+        
+        let tokens_ref_0: Vec<&Token> = tokens_as_ref(&tokens_0);
+        let tokens_ref_1: Vec<&Token> = tokens_as_ref(&tokens_1);
+        
+        let index_0 = get_least_prior_binary_index(&tokens_ref_0);
+        let index_1 = get_least_prior_binary_index(&tokens_ref_1);
+
+        assert_eq!(index_0, Some(1));
+        assert_eq!(index_1, Some(5));
+    }
+
+
 
