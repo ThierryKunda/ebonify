@@ -1,6 +1,13 @@
 use crate::{ebnf_syntax::*, pre_teatment::{brackets_paired}};
 
-
+pub fn get_rule_without_first_last<'a>(rule: &'a Vec<Token>) -> Vec<&'a Token<'a>>{
+    let tokens_test = rule.get(1..rule.len()-2).unwrap();
+    let mut new_rule: Vec<&Token> = Vec::new();
+    for tk in tokens_test {
+        new_rule.push(tk);
+    }
+    return new_rule;
+}
 
 pub fn get_least_prior_binary_index(rule: &Vec<&Token>) -> Option<usize> {
     if rule.len() < 3 {
