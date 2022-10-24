@@ -1,5 +1,17 @@
 use crate::{ebnf_syntax::*, pre_teatment::{brackets_paired}};
 
+pub fn create_rule_from_ref<'a>(rule: &'a Vec<&'a Token<'a>>) -> Rule<'a> {
+    if rule.len() == 1 {
+        todo!();
+    }
+
+    if rule.len() == 3 {
+        todo!();
+    }
+
+    todo!();
+}
+
 pub fn get_rule_without_first_last<'a>(rule: &'a Vec<Token>) -> Vec<&'a Token<'a>>{
     let tokens_test = rule.get(1..rule.len()-2).unwrap();
     let mut new_rule: Vec<&Token> = Vec::new();
