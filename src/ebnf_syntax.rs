@@ -28,8 +28,9 @@ pub enum Rule<'a> {
     ExceptRefR(Box<Rule<'a>>, Box<&'a Rule<'a>>),
     Optional(Box<Rule<'a>>),
     OptRef(Box<&'a Rule<'a>>),
-    Repetition(Box<&'a Rule<'a>>),
+    Repetition(Box<Rule<'a>>),
     RepetRef(Box<&'a Rule<'a>>),
+    Grouping(Box<Rule<'a>>),
     GrpRef(Box<&'a Rule<'a>>),
 }
 
