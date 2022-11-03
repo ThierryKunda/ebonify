@@ -150,6 +150,7 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator}, ast::*};
 
         assert_eq!(index_0, Some(1));
         assert_eq!(index_1, Some(5));
+        assert_eq!(index_2, Some(1));
     }
 
 
