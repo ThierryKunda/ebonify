@@ -9,14 +9,19 @@ pub fn get_rule_without_first_last<'a>(rule: &'a Vec<Token>) -> Vec<&'a Token<'a
     return new_rule;
 }
 
-pub fn get_least_prior_binary_index(rule: &Vec<&Token>) -> Option<usize> {
+pub fn get_least_prior_binary_index<'a, 'b>(rule: &'a Vec<&'b Token<'b>>) -> Option<usize> {
     if rule.len() < 3 {
         return None;
     }
     if rule.len() == 3 {
         return Some(1);
     }
-    let mut test_stack: Vec<&Token> = Vec::new();
+    match rule.first().unwrap() {
+        Token::Op(_) => (),
+        Token::Rl(_) => return Some(1),
+        Token::Invalid => return None,
+    }
+    let mut test_stack: Vec<&'b Token<'b>> = Vec::new();
     test_stack.push(rule.first().unwrap());
     let mut i = 1;
     while !test_stack.is_empty() && i < rule.len()-1 {
