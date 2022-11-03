@@ -52,19 +52,18 @@ pub fn get_least_prior_binary_index<'a, 'b>(rule: &'a Vec<&'b Token<'b>>) -> Opt
 }
 
 pub fn tokens_as_ref<'a>(rule: &'a Vec<Token<'a>>) -> Vec<&'a Token<'a>> {
-    let mut tokens: Vec<&Token> = Vec::new();
+    let mut tokens: Vec<&'a Token<'a>> = Vec::new();
     for tk in rule {
         tokens.push(tk);
     }
     tokens
 }
 
-pub fn least_prior_is_unary(rule: &Vec<Token>) -> bool {
+pub fn least_prior_is_unary(rule: &Vec<&Token>) -> bool {
     // We borrow the rule without the "extremities"
-    let tokens_test = rule.get(1..rule.len()-2).unwrap();
     let mut test_vec: Vec<&Token> = Vec::new();
-    for tk in tokens_test {
-        test_vec.push(tk);
+    for i in 1..rule.len()-1 {
+        test_vec.push(rule.get(i).unwrap());
     }
     return valid_dual_ref_operators(&test_vec);
 }
