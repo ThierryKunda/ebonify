@@ -1,7 +1,86 @@
 use crate::{ebnf_syntax::*, pre_teatment::{brackets_paired}};
 
-pub fn get_rule_without_first_last<'a>(rule: &'a Vec<Token>) -> Vec<&'a Token<'a>>{
-    let tokens_test = rule.get(1..rule.len()-2).unwrap();
+pub fn create_rule_tree<'a>(rule: &'a Vec<Token<'a>>) -> Rule<'a> {
+    let rule_as_ref = tokens_as_ref(rule);
+    create_rule_tree_by_ref(rule_as_ref)
+}
+
+pub fn create_rule_tree_by_ref<'a>(rule: Vec<&'a Token<'a>>) -> Rule<'a> {
+    if rule.len() == 1 {
+        match rule.first().unwrap() {
+            Token::Rl(rl) => match rl {
+                Rule::Literal(lit) => return Rule::Literal(lit.to_string()),
+                Rule::Identifier(id) => return Rule::Identifier(id.to_string()),
+                _ => return Rule::Identifier("Invalid".to_string()),
+            },
+            _ => return Rule::Identifier("Invalid".to_string()),
+        };
+    }
+    if rule.len() == 3 {
+        match (rule.first().unwrap(), rule.get(1).unwrap(), rule.last().unwrap()) {
+            (Token::Op(op1), Token::Rl(rl), Token::Op(_)) => match op1 {
+                Operator::OptionalL => return Rule::OptRef(Box::new(rl)),
+                Operator::RepetitionL => return Rule::RepetRef(Box::new(rl)),
+                Operator::GroupingL => return Rule::GrpRef(Box::new(rl)),
+                _ => return Rule::Identifier("Invalid".to_string()),
+            },
+            (Token::Rl(rl1), Token::Op(op), Token::Rl(rl2)) => match op {
+                Operator::Alternation => return Rule::AlterRef(Box::new(rl1), Box::new(rl2)),
+                Operator::Concatenation => return Rule::ConcatRef(Box::new(rl1), Box::new(rl2)),
+                Operator::Exception => return Rule::ExceptRef(Box::new(rl1), Box::new(rl2)),
+                _ => return Rule::Identifier("Invalid".to_string()),
+            },
+            _ => return Rule::Identifier("Invalid".to_string()),
+        };
+    }
+    if least_prior_is_unary(&rule) {
+        match rule.first().unwrap() {
+            Token::Op(Operator::RepetitionL) => return Rule::Repetition(Box::new(create_rule_tree_by_ref(get_rule_without_first_last(rule)))),
+            Token::Op(Operator::OptionalL) => return Rule::Optional(Box::new(create_rule_tree_by_ref(get_rule_without_first_last(rule)))),
+            Token::Op(Operator::GroupingL) => return Rule::Grouping(Box::new(create_rule_tree_by_ref(get_rule_without_first_last(rule)))),
+            _ => Rule::Identifier("Invalid".to_string()),
+        };
+    }
+    let i = get_least_prior_binary_index(&rule);
+    match i {
+        Some(idx) => {
+            let el = *rule.get(idx).unwrap();
+            let (left_part, right_part) = split_rule_by_index(&rule, idx);
+            match el {
+                Token::Op(Operator::Alternation) => return Rule::Alternation(Box::new(create_rule_tree_by_ref(left_part)), Box::new(create_rule_tree_by_ref(right_part))),
+                Token::Op(Operator::Concatenation) => return Rule::Concatenation(Box::new(create_rule_tree_by_ref(left_part)), Box::new(create_rule_tree_by_ref(right_part))),
+                Token::Op(Operator::Exception) => return Rule::Exception(Box::new(create_rule_tree_by_ref(left_part)), Box::new(create_rule_tree_by_ref(right_part))),
+                _ => return Rule::Identifier("Invalid".to_string()),
+            }
+        }
+        None => Rule::Identifier("Invalid".to_string()),
+    };
+    Rule::Identifier("Invalid".to_string())
+}
+
+pub fn split_rule_by_index<'a, 'b, 'c>(rule: &Vec<&'b Token<'c>>, split_pos: usize) -> (Vec<&'b Token<'c>>, Vec<&'b Token<'c>>) {
+    let mut left_part: Vec<&Token> = Vec::new();
+    let mut right_part: Vec<&Token> = Vec::new();
+    let rl_size = rule.len();
+    let split_pos_cp = split_pos.clone();
+    for i in 0..split_pos {
+        left_part.push(rule.get(i).unwrap());
+    }
+    for i in split_pos_cp+1..rl_size {
+        right_part.push(rule.get(i).unwrap());
+    }
+    (left_part, right_part)
+}
+
+pub fn copy_rule<'a, 'b>(rule: &'a Vec<&'b Token<'b>>) -> Vec<&'b Token<'b>> {
+    let mut new_rule: Vec<&'b Token<'b>> = Vec::new();
+    for tk in rule {
+        new_rule.push(tk);
+    }
+    new_rule
+}
+
+pub fn get_rule_without_first_last<'a>(rule: Vec<&'a Token<'a>>) -> Vec<&'a Token<'a>>{
     let mut new_rule: Vec<&Token> = Vec::new();
     for tk in tokens_test {
         new_rule.push(tk);
