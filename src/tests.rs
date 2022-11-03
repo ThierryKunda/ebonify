@@ -244,3 +244,59 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         }
 
     }
+
+    #[test]
+    fn rule_without_grouping_test() {
+        let tokens_0 = tokenize_rule(vec![String::from("ok")]);
+        let tokens_1 = tokenize_rule(vec![String::from("{"), String::from("yes"), String::from("}")]);
+        let tokens_2 = tokenize_rule(vec![String::from("("), String::from("\"abc\""), String::from("|"), String::from("\"def\""), String::from(")")]);
+        let tokens_3 = tokenize_rule(vec![String::from("("), String::from("\"abc\""), String::from("|"), String::from("\"def\""), String::from(")"), String::from(","), String::from("\"1234\"")]);
+
+        let tree_0 = create_rule_tree(&tokens_0);
+        let tree_1 = create_rule_tree(&tokens_1);
+        let tree_2 = create_rule_tree(&tokens_2);
+        let tree_3 = create_rule_tree(&tokens_3);
+
+        let t0 = tree_without_grouping(tree_0);
+        let t1 = tree_without_grouping(tree_1);
+        let t2 = tree_without_grouping(tree_2);
+        let t3 = tree_without_grouping(tree_3);
+        
+        match t0 {
+            Rule::Identifier(id) => assert_eq!(id, String::from("ok")),
+            _ => assert!(false), 
+        }
+
+        match t1 {
+            Rule::RepetRef(id) => match *id {
+                Rule::Identifier(s) => assert_eq!(s, &String::from("yes")),
+                _ => assert!(false)
+            },
+            _ => assert!(false),
+        }
+        match t2 {
+            Rule::AlterRef(left, right) => match (*left, *right) {
+                (Rule::Literal(lit1), Rule::Literal(lit2)) => {
+                    assert_eq!(lit1, &String::from("abc"));
+                    assert_eq!(lit2, &String::from("def"));
+                },
+                _ => assert!(false),
+            },
+            _ => assert!(false),
+        }
+
+        match t3 {
+            Rule::Concatenation(left, lit3) => match *left {
+                Rule::AlterRef(lit1, lit2) => match (*lit1, *lit2, lit3.deref()) {
+                    (Rule::Literal(s1), Rule::Literal(s2), Rule::Literal(s3)) => {
+                        assert_eq!(s1, &String::from("abc"));
+                        assert_eq!(s2, &String::from("def"));
+                        assert_eq!(s3, &String::from("1234"));
+                    },
+                    _ => assert!(false),
+                }
+                _ => assert!(false),
+            },
+            _ => assert!(false),    
+        }
+    }

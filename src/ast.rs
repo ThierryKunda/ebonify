@@ -1,5 +1,33 @@
 use crate::{ebnf_syntax::*, pre_teatment::{brackets_paired}};
 
+pub fn tree_without_grouping(rule: Rule) -> Rule {
+    match rule {
+        Rule::Literal(_) | Rule::Identifier(_) => rule,
+        Rule::RepetRef(_) | Rule::OptRef(_) => rule,
+        Rule::AlterRef(_, _) | Rule::ConcatRef(_, _) | Rule::ExceptRef(_, _) => rule,
+        Rule::GrpRef(sub_tree) => match *sub_tree {
+            Rule::Literal(lit) => Rule::Literal(lit.to_string()),
+            Rule::Identifier(id) => Rule::Identifier(id.to_string()),
+            _ => Rule::Identifier(String::from("Invalid")),
+        },
+        Rule::Grouping(sub_tree) => tree_without_grouping(*sub_tree), 
+        Rule::Repetition(sub_tree) => Rule::Repetition(Box::new(tree_without_grouping(*sub_tree))),
+        Rule::Optional(sub_tree) => Rule::Optional(Box::new(tree_without_grouping(*sub_tree))),
+        Rule::Alternation(lst, rst) => Rule::Alternation(
+            Box::new(tree_without_grouping(*lst)), Box::new(tree_without_grouping(*rst))),
+        Rule::Concatenation(lst, rst) => Rule::Concatenation(
+            Box::new(tree_without_grouping(*lst)), Box::new(tree_without_grouping(*rst))),
+        Rule::Exception(lst, rst) => Rule::Exception(
+            Box::new(tree_without_grouping(*lst)), Box::new(tree_without_grouping(*rst))),
+            Rule::AlterRefL(left, rst) => Rule::AlterRefL(left, Box::new(tree_without_grouping(*rst))),
+            Rule::AlterRefR(lst, right) => Rule::AlterRefR(Box::new(tree_without_grouping(*lst)), right),
+            Rule::ConcatRefL(left, rst) => Rule::ConcatRefL(left, Box::new(tree_without_grouping(*rst))),
+            Rule::ConcatRefR(lst, right) => Rule::ConcatRefR(Box::new(tree_without_grouping(*lst)), right),
+            Rule::ExceptRefL(left, rst) => Rule::ExceptRefL(left, Box::new(tree_without_grouping(*rst))),
+            Rule::ExceptRefR(lst, right) => Rule::ExceptRefR(Box::new(tree_without_grouping(*lst)), right),
+    }
+}
+
 pub fn create_rule_tree<'a>(rule: &'a Vec<Token<'a>>) -> Rule<'a> {
     let rule_as_ref = tokens_as_ref(rule);
     create_rule_tree_by_ref(rule_as_ref)
