@@ -1,4 +1,6 @@
-use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator}, ast::*};
+use std::ops::Deref;
+
+use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
 
 #[test]
     fn split_lines_test() {
@@ -128,10 +130,10 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator}, ast::*};
         let tokens_2: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("a"), String::from(","), String::from("b"), String::from("}"), String::from("|"), String::from("c")]);
         let tokens_3: Vec<Token> = tokenize_rule(vec![String::from("a"), String::from(","), String::from("{"), String::from("b"), String::from("|"), String::from("c"), String::from("}")]);
         
-        assert!(least_prior_is_unary(&tokens_0));
-        assert!(least_prior_is_unary(&tokens_1));
-        assert!(least_prior_is_unary(&tokens_2) == false);
-        assert!(least_prior_is_unary(&tokens_3) == false);
+        assert!(least_prior_is_unary(&tokens_as_ref(&tokens_0)));
+        assert!(least_prior_is_unary(&tokens_as_ref(&tokens_1)));
+        assert!(least_prior_is_unary(&tokens_as_ref(&tokens_2)) == false);
+        assert!(least_prior_is_unary(&tokens_as_ref(&tokens_3)) == false);
     }
     
     #[test]
@@ -152,6 +154,93 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator}, ast::*};
         assert_eq!(index_1, Some(5));
         assert_eq!(index_2, Some(1));
     }
+    #[test]
+    fn create_rule_tree_test() {
+        let tokens_0 = tokenize_rule(vec![String::from("ok")]);
+        let tokens_1 = tokenize_rule(vec![String::from("{"), String::from("yes"), String::from("}")]);
+        let tokens_2 = tokenize_rule(vec![String::from("\"abc\""), String::from("|"), String::from("\"efg\"")]);
+        let tokens_3 = tokenize_rule(vec![String::from("["), String::from("function"), String::from("|"), String::from("method"), String::from("]")]);
+        let tokens_4 = tokenize_rule(vec![String::from("("), String::from("foo"), String::from("|"), String::from("bar"), String::from(")"), String::from("-"), String::from("var")]);
+        let tokens_5 = tokenize_rule(vec![String::from("\"a\""), String::from("|"), String::from("\"b\""), String::from("|"), String::from("\"c\"")]);
 
+        let tree_0 = create_rule_tree(&tokens_0);
+        let tree_1 = create_rule_tree(&tokens_1);
+        let tree_2 = create_rule_tree(&tokens_2);
+        let tree_3 = create_rule_tree(&tokens_3);
+        let tree_4 = create_rule_tree(&tokens_4);
+        let tree_5 = create_rule_tree(&tokens_5);
 
+        
+        match tree_0 {
+            Rule::Identifier(_) => assert!(true),
+            _ => assert!(false),
+        }
+        match tree_1 {
+            Rule::RepetRef(rl) => match rl.deref() {
+                Rule::Identifier(id) => assert_eq!(id, &String::from("yes")),
+                _ => assert!(false),
+            },
+            _ => assert!(false),
+        }
+        match tree_2 {
+            Rule::AlterRef(left, right) => match (left.deref(), right.deref()) {
+                (&Rule::Literal(lit1), &Rule::Literal(lit2)) => {
+                    assert_eq!(lit1, &String::from("abc"));
+                    assert_eq!(lit2, &String::from("efg"));
+                },
+                _ => assert!(false),
+            }
+            _ => assert!(false),
+        }
+        match tree_3 {
+            Rule::Optional(el) => match el.deref() {
+                Rule::AlterRef(left, right) => match (*left.deref(), *right.deref()) {
+                    (Rule::Identifier(id1), Rule::Identifier(id2)) => {
+                        assert_eq!(id1, &String::from("function"));
+                        assert_eq!(id2, &String::from("method"));
+                    },
+                    _ => assert!(false),
+                },
+                _ => assert!(false),
+            },
+            _ => assert!(false),
+        }
 
+        match tree_4 {
+            Rule::Exception(a, b) => match (*a,b.deref()) {
+                (Rule::Grouping(grp), id) => match (*grp, id) {
+                    (Rule::AlterRef(f, b), Rule::Identifier(s3)) => match (f.deref(),b.deref()) {
+                        (&Rule::Identifier(s1), &Rule::Identifier(s2)) => {
+                            assert_eq!(s1, &String::from("foo"));
+                            assert_eq!(s2, &String::from("bar"));
+                            assert_eq!(s3, &String::from("var"));
+                        },
+                        _ => assert!(false),
+                    },
+                    _ => assert!(false),
+                },
+                _ => assert!(false),
+            },
+            Rule::Identifier(s) => {
+                println!("Error message : {s}");
+                assert!(false);
+            },
+            _ => assert!(false),
+        }
+
+        match tree_5 {
+           Rule::Alternation(a, other) => match (a.deref(), *other) {
+            (l1, Rule::AlterRef(b, c)) => match (l1, *b, *c) {
+                (Rule::Literal(lit1), Rule::Literal(lit2), Rule::Literal(lit3)) => {
+                    assert_eq!(lit1, &String::from("a"));
+                    assert_eq!(lit2, &String::from("b"));
+                    assert_eq!(lit3, &String::from("c"));
+                },
+                _ => assert!(false),
+            },
+            _ => assert!(false),
+           }
+           _ => assert!(false),
+        }
+
+    }
