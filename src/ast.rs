@@ -82,8 +82,8 @@ pub fn copy_rule<'a, 'b>(rule: &'a Vec<&'b Token<'b>>) -> Vec<&'b Token<'b>> {
 
 pub fn get_rule_without_first_last<'a>(rule: Vec<&'a Token<'a>>) -> Vec<&'a Token<'a>>{
     let mut new_rule: Vec<&Token> = Vec::new();
-    for tk in tokens_test {
-        new_rule.push(tk);
+    for i in 1..rule.len()-1 {
+        new_rule.push(rule.get(i).unwrap());
     }
     return new_rule;
 }
