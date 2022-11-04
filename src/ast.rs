@@ -321,7 +321,7 @@ pub fn has_highter_priority_to(op1: &Operator, op2: &Operator) -> bool {
     }
 }
 
-pub fn least_prior_is_unary(rule: &Vec<&Token>) -> bool {
+pub fn least_prior_is_unary<'a, 'b>(rule: &'a Vec<&'b Token<'b>>) -> bool {
     // We borrow the rule without the "extremities"
     let mut test_vec: Vec<&Token> = Vec::new();
     for i in 1..rule.len()-1 {
