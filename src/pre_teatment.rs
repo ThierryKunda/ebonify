@@ -222,3 +222,40 @@ pub fn valid_following_operators(rule: &Vec<Token>) -> bool {
     }
     return true;
 }
+
+pub fn tokens_equals(token1: &Token, token2: &Token) -> bool {
+    match (token1, token2) {
+        (Token::Op(op1), Token::Op(op2)) => match (op1, op2) {
+            (Operator::Alternation, Operator::Alternation) => true,
+            (Operator::Concatenation, Operator::Concatenation) => true,
+            (Operator::Exception, Operator::Exception) => true,
+            (Operator::OptionalL, Operator::OptionalL) => true,
+            (Operator::OptionalR, Operator::OptionalR) => true,
+            (Operator::RepetitionL, Operator::RepetitionL) => true,
+            (Operator::RepetitionR, Operator::RepetitionR) => true,
+            (Operator::GroupingL, Operator::GroupingL) => true,
+            (Operator::GroupingR, Operator::GroupingR) => true,
+            _ => false,
+        },
+        (Token::Rl(Rule::Literal(s1)), Token::Rl(Rule::Literal(s2))) => s1 == s2,
+        (Token::Rl(Rule::Identifier(s1)), Token::Rl(Rule::Identifier(s2))) => s1 == s2,
+        _ => false,
+    }
+}
+
+pub fn rules_equals(rule1: &Vec<&Token>, rule2: &Vec<&Token>) -> bool {
+    for i in 0..rule1.len() {
+        let a = rule1.get(i);
+        let b = rule1.get(i);
+        match (a, b) {
+            (None, _) => return false,
+            (_, None) => return false,
+            (Some(tk1), Some(tk2)) => {
+                if !tokens_equals(*tk1, *tk2) {
+                    return false;
+                }
+            },
+        };
+    }
+    true
+}

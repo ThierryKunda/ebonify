@@ -124,6 +124,22 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
     }
 
     #[test]
+    fn rules_equals_test() {
+        let tokens_0: Vec<Token> = tokenize_rule(vec![String::from("abcd")]);
+        let tokens_1: Vec<Token> = tokenize_rule(vec![String::from("abcd")]);
+        let tokens_2: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("abcd"), String::from("|"), String::from("abcd"), String::from("}")]);
+        let tokens_3: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("abcd"), String::from("|"), String::from("abcd"), String::from("}")]);
+
+        let t0 = tokens_as_ref(&tokens_0);
+        let t1 = tokens_as_ref(&tokens_1);
+        let t2 = tokens_as_ref(&tokens_2);
+        let t3 = tokens_as_ref(&tokens_3);
+
+        assert!(rules_equals(&t0, &t1));
+        assert!(rules_equals(&t2, &t3));
+    }
+
+    #[test]
     fn has_highter_priority_to_test() {
         let tokens_0: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("123"), String::from("}")]);
         let tokens_1: Vec<Token> = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("b"), String::from("|"), String::from("c")]);
