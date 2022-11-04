@@ -86,6 +86,149 @@ pub fn create_rule_tree_by_ref<'a>(rule: Vec<&'a Token<'a>>) -> Rule<'a> {
     Rule::Identifier("Invalid".to_string())
 }
 
+pub fn with_priority_parentheses<'a, 'b>(rule: &'a mut Vec<&'b Token<'b>>) -> Vec<&'b Token<'b>> {
+    let mut new_rule: Vec<&Token> = Vec::new();
+    match rule.len() {
+        1 => new_rule.push(rule.first().unwrap()), // with_priority_parentheses(a) -> a
+        3 => {
+            let (first, mid, last) = (
+                *rule.first().unwrap(),
+                *rule.get(1).unwrap(),
+                *rule.last().unwrap()
+            );
+            match (first, mid, last) {
+                (Token::Op(_), Token::Rl(_), Token::Op(_)) => {
+                    // with_priority_parentheses(< a >) -> < a >
+                    new_rule.push(first);
+                    new_rule.push(mid);
+                    new_rule.push(last);
+                },
+                (Token::Rl(_), Token::Op(op), Token::Rl(_)) => match op {
+                    // with_priority_parentheses(a . b) -> ( a . b )
+                    Operator::Alternation | Operator::Concatenation | Operator::Exception => {
+                        new_rule.push(&Token::Op(Operator::GroupingL));
+                        new_rule.push(first);
+                        new_rule.push(mid);
+                        new_rule.push(last);
+                        new_rule.push(&Token::Op(Operator::GroupingR));
+                    },
+                    _ => rule.push(&Token::Invalid),
+                },
+                _ => (),
+            }
+        },
+        5 => {
+            let (first, second, third, fourth, last) = (
+                *rule.get(0).unwrap(),
+                *rule.get(1).unwrap(),
+                *rule.get(2).unwrap(),
+                *rule.get(3).unwrap(),
+                *rule.get(4).unwrap()
+            );
+            match (first, third, last) {
+                (Token::Op(_), Token::Op(_), Token::Op(_)) => {
+                    // with_priority_parentheses(< a . b >) -> < a . b >
+                    new_rule.append(&mut vec![first, second, third, fourth, last]);
+                },
+                (Token::Rl(_), Token::Rl(_), Token::Rl(_)) => {
+                    // with_priority_parentheses(a . b * c) -> ( a . b ) * c if . >> *
+                    //                                         a . ( b * c ) else
+                    match (second, fourth) {
+                        (Token::Op(op1), Token::Op(op2)) => {
+                            if has_highter_priority_to(op1, op2) {
+                                new_rule.push(&Token::Op(Operator::GroupingL));
+                                new_rule.append(&mut vec![first, second, third]);
+                                new_rule.push(&Token::Op(Operator::GroupingR));
+                                new_rule.append(&mut vec![fourth, last]);
+                            } else {
+                                new_rule.append(&mut vec![first, second]);
+                                new_rule.push(&Token::Op(Operator::GroupingL));
+                                new_rule.append(&mut vec![third, fourth, last]);
+                                new_rule.push(&Token::Op(Operator::GroupingR));
+                            }
+                        },
+                        _ => new_rule.push(&Token::Invalid),
+                    }
+                }
+                _ => new_rule.push(&Token::Invalid),
+            }
+        }
+        _ => if least_prior_is_unary(rule) {
+            // with_priority_parentheses(< A >) -> < with_priority_parentheses(A) >
+            let mut sub_rule: Vec<&Token> = Vec::new();
+            new_rule.push(*rule.first().unwrap());
+            for i in 1..rule.len()-1 {
+                sub_rule.push(*rule.get(i).unwrap());
+            }
+            for el in with_priority_parentheses(&mut sub_rule) {
+                new_rule.push(el);
+            }
+            rule.push(*rule.last().unwrap());
+        } else {
+            let idx1 = get_least_prior_binary_index(rule);
+            match idx1 {
+                Some(i) => {
+                    let op1 = *rule.get(i).unwrap();
+                    let (mut left, mut right) = split_rule_by_index(rule, i);
+                    let idx2 = get_least_prior_binary_index(&right);
+                    match idx2 {
+                        Some(j) => {
+                            // with_priority_parentheses(A . B * C) -> with_priority_parentheses(A . B) * with_priority_parentheses(C) if . >> *
+                            //                                         with_priority_parentheses(A) . with_priority_parentheses(B * C)
+                            let op2 = *rule.get(j).unwrap();
+                            let (mut mid, mut end) = split_rule_by_index(&right, i);
+                            match (op1, op2) {
+                                (Token::Op(o1), Token::Op(o2)) => if has_highter_priority_to(o1, o2) {
+                                    new_rule.push(&Token::Op(Operator::GroupingL));
+                                    for el in with_priority_parentheses(&mut left) {
+                                        new_rule.push(el);
+                                    }
+                                    new_rule.push(op1);
+                                    for el in with_priority_parentheses(&mut mid) {
+                                        new_rule.push(el);
+                                    }
+                                    new_rule.push(&Token::Op(Operator::GroupingR));
+                                    new_rule.push(op2);
+                                    for el in with_priority_parentheses(&mut end) {
+                                        new_rule.push(el);
+                                    }
+
+                                } else {
+                                    for el in with_priority_parentheses(&mut left) {
+                                        new_rule.push(el);
+                                    }
+                                    new_rule.push(op1);
+                                    new_rule.push(&Token::Op(Operator::GroupingL));
+                                    for el in with_priority_parentheses(&mut mid) {
+                                        new_rule.push(el);
+                                    }
+                                    new_rule.push(op2);
+                                    for el in with_priority_parentheses(&mut end) {
+                                        new_rule.push(el);
+                                    }
+                                    new_rule.push(&Token::Op(Operator::GroupingR));
+                                },
+                                _ => new_rule.push(&Token::Invalid),
+                            }
+                        },
+                        None => {
+                            // with_priority_parentheses(A . B) -> with_priority_parentheses(A) . with_priority_parentheses(B)
+                            new_rule.append(&mut with_priority_parentheses(&mut left));
+                            new_rule.push(op1);
+                            new_rule.append(&mut with_priority_parentheses(&mut right));
+                        }
+                    }
+
+                },
+                None => new_rule.push(&Token::Invalid),
+            }
+        },
+
+    }
+    
+    new_rule
+}
+
 pub fn split_rule_by_index<'a, 'b, 'c>(rule: &Vec<&'b Token<'c>>, split_pos: usize) -> (Vec<&'b Token<'c>>, Vec<&'b Token<'c>>) {
     let mut left_part: Vec<&Token> = Vec::new();
     let mut right_part: Vec<&Token> = Vec::new();
