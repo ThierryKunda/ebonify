@@ -124,6 +124,28 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
     }
 
     #[test]
+    fn has_highter_priority_to_test() {
+        let tokens_0: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("123"), String::from("}")]);
+        let tokens_1: Vec<Token> = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("b"), String::from("|"), String::from("c")]);
+        let tokens_2: Vec<Token> = tokenize_rule(vec![String::from("a"), String::from(","), String::from("b"), String::from("|"), String::from("c")]);
+
+        match (tokens_0.first().unwrap(), tokens_0.last().unwrap()) {
+            (Token::Op(op1), Token::Op(op2)) => assert!(!has_highter_priority_to(op1, op2)),
+            _ => assert!(false),
+        }
+
+        match (tokens_1.get(1).unwrap(), tokens_1.get(3).unwrap()) {
+            (Token::Op(op1), Token::Op(op2)) => assert!(!has_highter_priority_to(op1, op2)),
+            _ => assert!(false),
+        }
+        
+        match (tokens_2.get(1).unwrap(), tokens_2.get(3).unwrap()) {
+            (Token::Op(op1), Token::Op(op2)) => assert!(has_highter_priority_to(op1, op2)),
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
     fn least_prior_is_unary_test() {
         let tokens_0: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("123"), String::from("}")]);
         let tokens_1: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("a"), String::from(","), String::from("b"), String::from("|"), String::from("c"), String::from("}")]);

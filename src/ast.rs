@@ -166,6 +166,18 @@ pub fn tokens_as_ref<'a>(rule: &'a Vec<Token<'a>>) -> Vec<&'a Token<'a>> {
     tokens
 }
 
+pub fn has_highter_priority_to(op1: &Operator, op2: &Operator) -> bool {
+    match (op1, op2) {
+        (&Operator::Exception, &Operator::Exception) => false,
+        (&Operator::Exception, _) => true,
+        (&Operator::Concatenation, &Operator::Concatenation) => false,
+        (&Operator::Concatenation, _) => true,
+        (&Operator::Alternation, &Operator::Alternation) => false,
+        (&Operator::Alternation, _) => true,
+        _ => false,
+    }
+}
+
 pub fn least_prior_is_unary(rule: &Vec<&Token>) -> bool {
     // We borrow the rule without the "extremities"
     let mut test_vec: Vec<&Token> = Vec::new();
