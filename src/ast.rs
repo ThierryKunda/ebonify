@@ -1,5 +1,10 @@
 use crate::{ebnf_syntax::*, pre_teatment::{brackets_paired}};
 
+pub fn create_definition_tree<'a>(rule: &'a Vec<Token>) -> Rule<'a> {
+    let rule_tree = create_rule_tree(rule);
+    tree_without_grouping(rule_tree)
+}
+
 pub fn tree_without_grouping(rule: Rule) -> Rule {
     match rule {
         Rule::Literal(_) | Rule::Identifier(_) => rule,
