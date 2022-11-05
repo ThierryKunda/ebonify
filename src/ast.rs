@@ -29,8 +29,9 @@ pub fn tree_without_grouping(rule: Rule) -> Rule {
 }
 
 pub fn create_rule_tree<'a>(rule: &'a Vec<Token<'a>>) -> Rule<'a> {
-    let rule_as_ref = tokens_as_ref(rule);
-    create_rule_tree_by_ref(rule_as_ref)
+    let mut rule_as_ref = tokens_as_ref(rule);
+    let rule_with_prior_brackets = with_priority_parentheses(&mut rule_as_ref);
+    create_rule_tree_by_ref(rule_with_prior_brackets)
 }
 
 pub fn create_rule_tree_by_ref<'a>(rule: Vec<&'a Token<'a>>) -> Rule<'a> {
@@ -212,10 +213,12 @@ pub fn with_priority_parentheses<'a, 'b>(rule: &'a mut Vec<&'b Token<'b>>) -> Ve
                             }
                         },
                         None => {
-                            // with_priority_parentheses(A . B) -> with_priority_parentheses(A) . with_priority_parentheses(B)
+                            // with_priority_parentheses(A . B) -> (with_priority_parentheses(A) . with_priority_parentheses(B))
+                            new_rule.push(&Token::Op(Operator::GroupingL));
                             new_rule.append(&mut with_priority_parentheses(&mut left));
                             new_rule.push(op1);
                             new_rule.append(&mut with_priority_parentheses(&mut right));
+                            new_rule.push(&Token::Op(Operator::GroupingL));
                         }
                     }
 

@@ -203,6 +203,9 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         let tokens_5: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("a"), String::from("-"), String::from("b"), String::from("|"), String::from("c"), String::from("}")]);
         let tokens_6: Vec<Token> = tokenize_rule(vec![String::from("("), String::from("a"), String::from("|"), String::from("b"), String::from(")"), String::from("-"), String::from("c")]);
         let tokens_7: Vec<Token> = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("b"), String::from("|"), String::from("c")]);
+        let tokens_8: Vec<Token> = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("b"), String::from("|"), String::from("c"), String::from("|"), String::from("d")]);
+        let tokens_9: Vec<Token> = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("b"), String::from(","), String::from("c"), String::from("|"), String::from("d")]);
+        let tokens_10: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("a"), String::from(","), String::from("b"), String::from("}"), String::from("|"), String::from("["), String::from("c"), String::from("-"), String::from("d"), String::from("]")]);
         
         let mut tokens_ref_0: Vec<&Token> = tokens_as_ref(&tokens_0);
         let mut tokens_ref_1: Vec<&Token> = tokens_as_ref(&tokens_1);
@@ -212,6 +215,9 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         let mut tokens_ref_5: Vec<&Token> = tokens_as_ref(&tokens_5);
         let mut tokens_ref_6: Vec<&Token> = tokens_as_ref(&tokens_6);
         let mut tokens_ref_7: Vec<&Token> = tokens_as_ref(&tokens_7);
+        let mut tokens_ref_8: Vec<&Token> = tokens_as_ref(&tokens_8);
+        let mut tokens_ref_9: Vec<&Token> = tokens_as_ref(&tokens_9);
+        let mut tokens_ref_10: Vec<&Token> = tokens_as_ref(&tokens_10);
 
         let t0 = with_priority_parentheses(&mut tokens_ref_0);
         let t1 = with_priority_parentheses(&mut tokens_ref_1);
@@ -221,6 +227,9 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         let t5 = with_priority_parentheses(&mut tokens_ref_5);
         let t6 = with_priority_parentheses(&mut tokens_ref_6);
         let t7 = with_priority_parentheses(&mut tokens_ref_7);
+        let t8 = with_priority_parentheses(&mut tokens_ref_8);
+        let t9 = with_priority_parentheses(&mut tokens_ref_9);
+        let t10 = with_priority_parentheses(&mut tokens_ref_10);
 
         let expected_0 = tokenize_rule(vec![String::from("abc")]);
         let expected_1 = tokenize_rule(vec![String::from("("), String::from("abc"), String::from("|"), String::from("123"), String::from(")")]);
@@ -230,6 +239,9 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         let expected_5 = tokenize_rule(vec![String::from("{"), String::from("("), String::from("a"), String::from("-"), String::from("b"), String::from(")"), String::from("|"), String::from("c"), String::from("}")]);
         let expected_6 = tokenize_rule(vec![String::from("("), String::from("a"), String::from("|"), String::from("b"), String::from(")"), String::from("-"), String::from("c")]);
         let expected_7 = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("("), String::from("b"), String::from("|"), String::from("c"), String::from(")")]);
+        let expected_8 = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("("), String::from("b"), String::from("|"), String::from("("), String::from("c"), String::from("|"), String::from("d"), String::from(")"), String::from(")")]);
+        let expected_9 = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("("), String::from("("), String::from("b"), String::from(","), String::from("c"), String::from(")"), String::from("|"), String::from("d"), String::from(")")]);
+        let expected_10 = tokenize_rule(vec![String::from("("), String::from("{"), String::from("a"), String::from(","), String::from("b"), String::from("}"), String::from("|"), String::from("["), String::from("c"), String::from("-"), String::from("d"), String::from("]"), String::from(")")]);
         
         let tokens_exp_ref_0 = tokens_as_ref(&expected_0);
         let tokens_exp_ref_1 = tokens_as_ref(&expected_1);
@@ -239,6 +251,9 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         let tokens_exp_ref_5 = tokens_as_ref(&expected_5);
         let tokens_exp_ref_6 = tokens_as_ref(&expected_6);
         let tokens_exp_ref_7 = tokens_as_ref(&expected_7);
+        let tokens_exp_ref_8 = tokens_as_ref(&expected_8);
+        let tokens_exp_ref_9 = tokens_as_ref(&expected_9);
+        let tokens_exp_ref_10 = tokens_as_ref(&expected_10);
 
         assert!(rules_equals(&t0, &tokens_exp_ref_0));
         assert!(rules_equals(&t1, &tokens_exp_ref_1));
@@ -248,7 +263,11 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         assert!(rules_equals(&t5, &tokens_exp_ref_5));
         assert!(rules_equals(&t6, &tokens_exp_ref_6));
         assert!(rules_equals(&t7, &tokens_exp_ref_7));
+        assert!(rules_equals(&t8, &tokens_exp_ref_8));
+        assert!(rules_equals(&t9, &tokens_exp_ref_9));
+        assert!(rules_equals(&t10, &tokens_exp_ref_10));
     }
+    
     #[test]
     fn create_rule_tree_test() {
         let tokens_0 = tokenize_rule(vec![String::from("ok")]);
@@ -278,13 +297,7 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
             _ => assert!(false),
         }
         match tree_2 {
-            Rule::AlterRef(left, right) => match (left.deref(), right.deref()) {
-                (&Rule::Literal(lit1), &Rule::Literal(lit2)) => {
-                    assert_eq!(lit1, &String::from("abc"));
-                    assert_eq!(lit2, &String::from("efg"));
-                },
-                _ => assert!(false),
-            }
+            Rule::Grouping(_) => assert!(true),
             _ => assert!(false),
         }
         match tree_3 {
@@ -302,39 +315,27 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         }
 
         match tree_4 {
-            Rule::Exception(a, b) => match (*a,b.deref()) {
-                (Rule::Grouping(grp), id) => match (*grp, id) {
-                    (Rule::AlterRef(f, b), Rule::Identifier(s3)) => match (f.deref(),b.deref()) {
-                        (&Rule::Identifier(s1), &Rule::Identifier(s2)) => {
-                            assert_eq!(s1, &String::from("foo"));
-                            assert_eq!(s2, &String::from("bar"));
-                            assert_eq!(s3, &String::from("var"));
-                        },
+            Rule::Grouping(el) => match *el {
+                Rule::Exception(left, other) => match (*left, other.deref()) {
+                    (Rule::Grouping(ids), Rule::Identifier(_)) => match ids.deref() {
+                        Rule::AlterRef(_, _) => assert!(true),
                         _ => assert!(false),
                     },
                     _ => assert!(false),
                 },
                 _ => assert!(false),
             },
-            Rule::Identifier(s) => {
-                println!("Error message : {s}");
-                assert!(false);
-            },
             _ => assert!(false),
         }
 
         match tree_5 {
-           Rule::Alternation(a, other) => match (a.deref(), *other) {
-            (l1, Rule::AlterRef(b, c)) => match (l1, *b, *c) {
-                (Rule::Literal(lit1), Rule::Literal(lit2), Rule::Literal(lit3)) => {
-                    assert_eq!(lit1, &String::from("a"));
-                    assert_eq!(lit2, &String::from("b"));
-                    assert_eq!(lit3, &String::from("c"));
-                },
+           Rule::Alternation(left, other) => match (left.deref(), *other) {
+            (Rule::Literal(_), Rule::Grouping(right)) => match *right {
+                Rule::AlterRef(_, _) => assert!(true),
                 _ => assert!(false),
             },
             _ => assert!(false),
-           }
+           },
            _ => assert!(false),
         }
 
