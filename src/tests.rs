@@ -3,8 +3,8 @@ use std::ops::Deref;
 use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
 
 #[test]
-    fn split_lines_test() {
-        let file_content = split_lines("tests_samples/separation.txt");
+    fn split_lines_from_file_test() {
+        let file_content = split_lines_from_file("tests_samples/separation.txt");
         let lines: Vec<String>;
         match file_content {
             Ok(v) => {

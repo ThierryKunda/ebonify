@@ -3,25 +3,27 @@ use std::fs;
 use crate::ebnf_syntax::*;
 use crate::error::PreTreatmentError;
 
-pub fn split_lines(filepath: &str) -> Result<Vec<String>, PreTreatmentError> {
-    let file_content = fs::read_to_string(filepath);
-    let content: String;
-    match file_content {
-        Ok(ct) => {
-            content = ct;
-        },
-        Err(_) => {
-            return Err(PreTreatmentError);
-        },
-    }
+pub fn split_lines(content: String) -> Vec<String> {
     let re = regex::Regex::new(r".+;").unwrap();
     let content_str = content.as_str();
     let matches_iter = re.find_iter(content_str).map(|m| m.as_str());
     let mut v: Vec<String> = Vec::new();
     for mat in matches_iter {
-        v.push(mat.to_string())
+        v.push(mat.to_string());
     }
-    return Ok(v);
+    v
+}
+
+pub fn split_lines_from_file(filepath: &str) -> Result<Vec<String>, PreTreatmentError> {
+    let file_content = fs::read_to_string(filepath);
+    match file_content {
+        Ok(ct) => {
+            Ok(split_lines(ct))
+        },
+        Err(_) => {
+            Err(PreTreatmentError)
+        },
+    }
 }
 
 pub fn split_members_aux(rule: String) -> Vec<String>{
