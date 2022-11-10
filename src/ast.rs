@@ -8,7 +8,7 @@ pub fn create_definition_tree<'a>(rule: &'a Vec<Token>) -> Rule<'a> {
 pub fn tree_without_grouping(rule: Rule) -> Rule {
     match rule {
         Rule::Literal(_) | Rule::Identifier(_) => rule,
-        Rule::RepetRef(_) | Rule::OptRef(_) => rule,
+        Rule::Ref(_) | Rule::RepetRef(_) | Rule::OptRef(_) => rule,
         Rule::AlterRef(_, _) | Rule::ConcatRef(_, _) | Rule::ExceptRef(_, _) => rule,
         Rule::GrpRef(sub_tree) => match *sub_tree {
             Rule::Literal(lit) => Rule::Literal(lit.to_string()),

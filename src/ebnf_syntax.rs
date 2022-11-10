@@ -14,6 +14,7 @@ pub enum Operator {
 pub enum Rule<'a> {
     Literal(String),
     Identifier(String),
+    Ref(Box<&'a Rule<'a>>),
     Alternation(Box<Rule<'a>>, Box<Rule<'a>>),
     AlterRef(Box<&'a Rule<'a>>, Box<&'a Rule<'a>>),
     AlterRefL(Box<&'a Rule<'a>>, Box<Rule<'a>>),
