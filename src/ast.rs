@@ -2,6 +2,175 @@ use std::{collections::BTreeMap, ops::Deref};
 
 use crate::{ebnf_syntax::*, pre_teatment::{brackets_paired, split_lines, split_members}};
 
+
+
+pub fn replace_id_with_ref<'a, 'b>(tree_1: Rule<'b>, rule_name_2: &String, tree_2: &'b Rule<'b>) -> Rule<'b> {
+    match tree_1 {
+        Rule::Literal(lit) => Rule::Literal(lit),
+
+        Rule::Identifier(id) => if &id == rule_name_2 { Rule::Ref(Box::new(tree_2)) }  else { Rule::Identifier(id.to_string()) },
+
+        // Alternation
+        Rule::AlterRefL(tree_left, r) => match *r {
+            Rule::Identifier(ref id) => if id == rule_name_2 {
+                Rule::AlterRef(tree_left, Box::new(tree_2))
+            } else {
+                Rule::AlterRefL(tree_left, Box::new(replace_id_with_ref(*r, rule_name_2, tree_2)))
+            },
+            other => other
+        },
+
+        Rule::AlterRefR(r, tree_right) => match *r {
+            Rule::Identifier(ref id) => if id == rule_name_2 {
+                Rule::AlterRef(Box::new(tree_2), tree_right)
+            } else {
+                Rule::AlterRefR(Box::new(replace_id_with_ref(*r, rule_name_2, tree_2)), tree_right)
+            },
+            other => other
+        },
+
+        Rule::Alternation(left, right) => match (*left, *right) {
+            (Rule::Identifier(id), r) => if &id == rule_name_2 {
+                 Rule::AlterRefL(Box::new(tree_2), Box::new(replace_id_with_ref(r, rule_name_2, tree_2)))
+                } else {
+                    Rule::Alternation(
+                        Box::new(Rule::Identifier(id.to_string())),
+                        Box::new(replace_id_with_ref(r, rule_name_2, tree_2))
+                    )
+                },
+            (r, Rule::Identifier(id)) => if &id == rule_name_2 {
+                Rule::AlterRefR(Box::new(replace_id_with_ref(r, rule_name_2, tree_2)), Box::new(tree_2))
+               } else {
+                   Rule::Alternation(
+                    Box::new(replace_id_with_ref(r, rule_name_2, tree_2)),
+                    Box::new(Rule::Identifier(id.to_string()))
+                )
+               },
+            (tree_left, tree_right) => Rule::Alternation(
+                Box::new(replace_id_with_ref(tree_left, rule_name_2, tree_2)),
+                Box::new(replace_id_with_ref(tree_right, rule_name_2, tree_2)))
+        },
+
+
+        // Concatenation
+        Rule::ConcatRefL(tree_left, r) => match *r {
+            Rule::Identifier(ref id) => if id == rule_name_2 {
+                Rule::ConcatRef(tree_left, Box::new(tree_2))
+            } else {
+                Rule::ConcatRefL(tree_left, Box::new(replace_id_with_ref(*r, rule_name_2, tree_2)))
+            },
+            other => other
+        },
+
+        Rule::ConcatRefR(r, tree_right) => match *r {
+            Rule::Identifier(ref id) => if id == rule_name_2 {
+                Rule::ConcatRef(Box::new(tree_2), tree_right)
+            } else {
+                Rule::ConcatRefR(Box::new(replace_id_with_ref(*r, rule_name_2, tree_2)), tree_right)
+            },
+            other => other
+        },
+
+        Rule::Concatenation(left, right) => match (*left, *right) {
+            (Rule::Identifier(id), r) => if &id == rule_name_2 {
+                 Rule::ConcatRefL(Box::new(tree_2), Box::new(replace_id_with_ref(r, rule_name_2, tree_2)))
+                } else {
+                    Rule::Concatenation(
+                        Box::new(Rule::Identifier(id.to_string())),
+                        Box::new(replace_id_with_ref(r, rule_name_2, tree_2))
+                    )
+                },
+            (r, Rule::Identifier(id)) => if &id == rule_name_2 {
+                Rule::ConcatRefR(Box::new(replace_id_with_ref(r, rule_name_2, tree_2)), Box::new(tree_2))
+               } else {
+                   Rule::Concatenation(
+                    Box::new(replace_id_with_ref(r, rule_name_2, tree_2)),
+                    Box::new(Rule::Identifier(id.to_string()))
+                )
+               },
+            (tree_left, tree_right) => Rule::Concatenation(
+                Box::new(replace_id_with_ref(tree_left, rule_name_2, tree_2)),
+                Box::new(replace_id_with_ref(tree_right, rule_name_2, tree_2)))
+        },
+
+
+        // Exception
+        Rule::ExceptRefL(tree_left, r) => match *r {
+            Rule::Identifier(ref id) => if id == rule_name_2 {
+                Rule::ExceptRef(tree_left, Box::new(tree_2))
+            } else {
+                Rule::ExceptRefL(tree_left, Box::new(replace_id_with_ref(*r, rule_name_2, tree_2)))
+            },
+            other => other
+        },
+
+        Rule::ExceptRefR(r, tree_right) => match *r {
+            Rule::Identifier(ref id) => if id == rule_name_2 {
+                Rule::ExceptRef(Box::new(tree_2), tree_right)
+            } else {
+                Rule::ExceptRefR(Box::new(replace_id_with_ref(*r, rule_name_2, tree_2)), tree_right)
+            },
+            other => other
+        },
+
+        Rule::Exception(left, right) => match (*left, *right) {
+            (Rule::Identifier(id), r) => if &id == rule_name_2 {
+                 Rule::ExceptRefL(Box::new(tree_2), Box::new(replace_id_with_ref(r, rule_name_2, tree_2)))
+                } else {
+                    Rule::Exception(
+                        Box::new(Rule::Identifier(id.to_string())),
+                        Box::new(replace_id_with_ref(r, rule_name_2, tree_2))
+                    )
+                },
+            (r, Rule::Identifier(id)) => if &id == rule_name_2 {
+                Rule::ExceptRefR(Box::new(replace_id_with_ref(r, rule_name_2, tree_2)), Box::new(tree_2))
+               } else {
+                   Rule::Concatenation(
+                    Box::new(replace_id_with_ref(r, rule_name_2, tree_2)),
+                    Box::new(Rule::Identifier(id.to_string()))
+                )
+               },
+            (tree_left, tree_right) => Rule::Exception(
+                Box::new(replace_id_with_ref(tree_left, rule_name_2, tree_2)),
+                Box::new(replace_id_with_ref(tree_right, rule_name_2, tree_2)))
+        },
+
+        // Repetition
+        Rule::Repetition(el) => match *el {
+            Rule::Identifier(ref id) => if id == rule_name_2 {
+                Rule::RepetRef(Box::new(tree_2))
+            } else {
+                Rule::Repetition(Box::new(replace_id_with_ref(*el, rule_name_2, tree_2)))
+            },
+            other => Rule::Repetition(Box::new(replace_id_with_ref(other, rule_name_2, tree_2))),
+        }
+
+
+        // Grouping
+        Rule::Grouping(el) => match *el {
+            Rule::Identifier(ref id) => if id == rule_name_2 {
+                Rule::GrpRef(Box::new(tree_2))
+            } else {
+                Rule::Grouping(Box::new(replace_id_with_ref(*el, rule_name_2, tree_2)))
+            },
+            other => Rule::Grouping(Box::new(replace_id_with_ref(other, rule_name_2, tree_2))),
+        }
+
+
+        // Optional
+        Rule::Optional(el) => match *el {
+            Rule::Identifier(ref id) => if id == rule_name_2 {
+                Rule::OptRef(Box::new(tree_2))
+            } else {
+                Rule::Optional(Box::new(replace_id_with_ref(*el, rule_name_2, tree_2)))
+            },
+            other => Rule::Optional(Box::new(replace_id_with_ref(other, rule_name_2, tree_2))),
+        }
+
+        any => any,
+    }
+}
+
 pub fn are_same_tree<'a, 'b, 'c>(rule_1: &'b Rule<'b>, rule_2: &'c Rule<'c>) -> bool {
     match (rule_1, rule_2) {
         (
