@@ -35,7 +35,7 @@ pub fn split_members_aux(rule: String) -> Vec<String>{
     rules
 }
 
-fn split_members(rules: Vec<String>) -> Vec<Vec<String>> {
+pub fn split_members(rules: Vec<String>) -> Vec<Vec<String>> {
     let mut members: Vec<Vec<String>> = Vec::new();
     for r in rules.iter() {
         members.push(split_members_aux(r.to_string()));
@@ -66,8 +66,12 @@ pub fn tokenize(token: String) -> Token<'static> {
     }
 }
 
-pub fn tokenize_rule(rule: Vec<String>) -> Vec<Token<'static>> {
+pub fn tokenize_rule<'a>(rule: Vec<String>) -> Vec<Token<'a>> {
     rule.iter().map(|v| tokenize(v.to_string())).collect()
+}
+
+pub fn tokenize_rule_from_str<'a>(rule: String) -> Vec<Token<'a>> {
+    tokenize_rule(rule.split(' ').map(|el| el.to_string()).collect())
 }
 
 pub fn validate_rule(rules: Vec<Token>) -> bool {
