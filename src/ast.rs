@@ -1,4 +1,106 @@
-use crate::{ebnf_syntax::*, pre_teatment::{brackets_paired}};
+use std::{collections::BTreeMap, ops::Deref};
+
+use crate::{ebnf_syntax::*, pre_teatment::{brackets_paired, split_lines, split_members}};
+
+pub fn are_same_tree<'a, 'b, 'c>(rule_1: &'b Rule<'b>, rule_2: &'c Rule<'c>) -> bool {
+    match (rule_1, rule_2) {
+        (
+            Rule::Literal(s1),
+            Rule::Literal(s2),
+        ) |
+        (
+            Rule::Identifier(s1),
+            Rule::Identifier(s2),
+        ) => s1 == s2,
+        (
+            Rule::RepetRef(el1),
+            Rule::RepetRef(el2),
+        ) | 
+        (
+            Rule::GrpRef(el1),
+            Rule::GrpRef(el2),
+        ) |
+        (
+            Rule::OptRef(el1),
+            Rule::OptRef(el2),
+        ) |
+        (
+            Rule::Ref(el1),
+            Rule::Ref(el2),
+        ) => are_same_tree(el1, el2),
+
+        (
+            Rule::Repetition(el1),
+            Rule::Repetition(el2),
+        ) |
+        (
+            Rule::Grouping(el1),
+            Rule::Grouping(el2),
+        ) |
+        (
+            Rule::Optional(el1),
+            Rule::Optional(el2),
+        ) => are_same_tree(el1, el2),
+
+
+        (
+            Rule::AlterRef(sub_1, sub_2),
+            Rule::AlterRef(sub_3, sub_4),
+        ) |
+        (
+            Rule::ConcatRef(sub_1, sub_2),
+            Rule::ConcatRef(sub_3, sub_4),
+        ) |
+        (
+            Rule::ExceptRef(sub_1, sub_2),
+            Rule::ExceptRef(sub_3, sub_4),
+        ) => are_same_tree(sub_1, sub_3) && are_same_tree(sub_2, sub_4),
+        (
+            Rule::AlterRefL(sub_1, sub_2),
+            Rule::AlterRefL(sub_3, sub_4),
+        ) |
+        (
+            Rule::ConcatRefL(sub_1, sub_2),
+            Rule::ConcatRefL(sub_3, sub_4),
+        )
+        |
+        (
+            Rule::ExceptRefL(sub_1, sub_2),
+            Rule::ExceptRefL(sub_3, sub_4),
+        ) => are_same_tree(sub_1, sub_3) && are_same_tree(sub_2, sub_4),
+        (
+            Rule::AlterRefR(sub_1, sub_2),
+            Rule::AlterRefR(sub_3, sub_4),
+        ) |
+        (
+            Rule::ConcatRefR(sub_1, sub_2),
+            Rule::ConcatRefR(sub_3, sub_4),
+        )
+        |
+        (
+            Rule::ExceptRefR(sub_1, sub_2),
+            Rule::ExceptRefR(sub_3, sub_4),
+        ) => are_same_tree(sub_1, sub_3) && are_same_tree(sub_2, sub_4),
+
+        (
+            Rule::Alternation(sub_1, sub_2),
+            Rule::Alternation(sub_3, sub_4),
+        ) |
+        (
+            Rule::Concatenation(sub_1, sub_2),
+            Rule::Concatenation(sub_3, sub_4),
+        )
+        |
+        (
+            Rule::Exception(sub_1, sub_2),
+            Rule::Exception(sub_3, sub_4),
+        ) => are_same_tree(sub_1, sub_3) && are_same_tree(sub_2, sub_4),
+
+        _ => false
+    }
+}
+
+
 
 pub fn create_definition_tree<'a>(rule: &'a Vec<Token>) -> Rule<'a> {
     let rule_tree = create_rule_tree(rule);

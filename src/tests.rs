@@ -396,3 +396,31 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
             _ => assert!(false),    
         }
     }
+
+    #[test]
+    fn are_same_tree_test() {
+        let tokens_0 = tokenize_rule(vec![String::from("ok")]);
+        let tokens_1 = tokenize_rule(vec![String::from("{"), String::from("yes"), String::from("}")]);
+        let tokens_2 = tokenize_rule(vec![String::from("("), String::from("\"abc\""), String::from("|"), String::from("\"def\""), String::from(")")]);
+        let tokens_3 = tokenize_rule(vec![String::from("("), String::from("foo"), String::from("|"), String::from("bar"), String::from(")"), String::from("-"), String::from("var")]);
+
+        let tokens_a = tokenize_rule(vec![String::from("ok")]);
+        let tokens_b = tokenize_rule(vec![String::from("{"), String::from("yes"), String::from("}")]);
+        let tokens_c = tokenize_rule(vec![String::from("("), String::from("\"abc\""), String::from("|"), String::from("\"def\""), String::from(")")]);
+        let tokens_d = tokenize_rule(vec![String::from("("), String::from("foo"), String::from("|"), String::from("bar"), String::from(")"), String::from("-"), String::from("var")]);
+
+        let tree_0 = create_rule_tree(&tokens_0);
+        let tree_1 = create_rule_tree(&tokens_1);
+        let tree_2 = create_rule_tree(&tokens_2);
+        let tree_3 = create_rule_tree(&tokens_3);
+
+        let tree_a = create_rule_tree(&tokens_a);
+        let tree_b = create_rule_tree(&tokens_b);
+        let tree_c = create_rule_tree(&tokens_c);
+        let tree_d = create_rule_tree(&tokens_d);
+
+        assert!(are_same_tree(&tree_0, &tree_a));
+        assert!(are_same_tree(&tree_1, &tree_b));
+        assert!(are_same_tree(&tree_2, &tree_c));
+        assert!(are_same_tree(&tree_3, &tree_d));
+    }
