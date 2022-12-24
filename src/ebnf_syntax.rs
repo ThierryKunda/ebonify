@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+use std::rc::{Rc, Weak};
+
 pub enum Operator {
     Alternation,
     Concatenation,
@@ -11,32 +12,32 @@ pub enum Operator {
     GroupingR,
 }
 
-pub enum Rule<'a> {
+pub enum Rule {
     Literal(String),
     Identifier(String),
-    Ref(Box<&'a Rule<'a>>),
-    Alternation(Box<Rule<'a>>, Box<Rule<'a>>),
-    AlterRef(Box<&'a Rule<'a>>, Box<&'a Rule<'a>>),
-    AlterRefL(Box<&'a Rule<'a>>, Box<Rule<'a>>),
-    AlterRefR(Box<Rule<'a>>, Box<&'a Rule<'a>>),
-    Concatenation(Box<Rule<'a>>, Box<Rule<'a>>),
-    ConcatRef(Box<&'a Rule<'a>>, Box<&'a Rule<'a>>),
-    ConcatRefL(Box<&'a Rule<'a>>, Box<Rule<'a>>),
-    ConcatRefR(Box<Rule<'a>>, Box<&'a Rule<'a>>),
-    Exception(Box<Rule<'a>>, Box<Rule<'a>>),
-    ExceptRef(Box<&'a Rule<'a>>, Box<&'a Rule<'a>>),
-    ExceptRefL(Box<&'a Rule<'a>>, Box<Rule<'a>>),
-    ExceptRefR(Box<Rule<'a>>, Box<&'a Rule<'a>>),
-    Optional(Box<Rule<'a>>),
-    OptRef(Box<&'a Rule<'a>>),
-    Repetition(Box<Rule<'a>>),
-    RepetRef(Box<&'a Rule<'a>>),
-    Grouping(Box<Rule<'a>>),
-    GrpRef(Box<&'a Rule<'a>>),
+    Ref(Weak<Rule>),
+    Alternation(Rc<Rule>, Rc<Rule>),
+    AlterRef(Weak<Rule>,Weak<Rule>),
+    AlterRefL(Weak<Rule>, Rc<Rule>),
+    AlterRefR(Rc<Rule>, Weak<Rule>),
+    Concatenation(Rc<Rule>, Rc<Rule>),
+    ConcatRef(Weak<Rule>, Weak<Rule>),
+    ConcatRefL(Weak<Rule>, Rc<Rule>),
+    ConcatRefR(Rc<Rule>, Weak<Rule>),
+    Exception(Rc<Rule>, Rc<Rule>),
+    ExceptRef(Weak<Rule>, Weak<Rule>),
+    ExceptRefL(Weak<Rule>, Rc<Rule>),
+    ExceptRefR(Rc<Rule>, Weak<Rule>),
+    Optional(Rc<Rule>),
+    OptRef(Weak<Rule>),
+    Repetition(Rc<Rule>),
+    RepetRef(Weak<Rule>),
+    Grouping(Rc<Rule>),
+    GrpRef(Weak<Rule>),
 }
 
-pub enum Token<'a> {
+pub enum Token {
     Op(Operator),
-    Rl(Rule<'a>),
+    Rl(Rc<Rule>),
     Invalid,
 }

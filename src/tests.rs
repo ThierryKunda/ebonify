@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{ops::Deref, rc::Rc};
 
 use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
 
@@ -38,15 +38,15 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         let op_repet_token = tokenize(opening_repet);
 
         match a_token {
-            Token::Rl(rl) => match rl {
-                crate::ebnf_syntax::Rule::Literal(lit) => assert_eq!(lit, "a".to_string()),
+            Token::Rl(rl) => match rl.deref() {
+                Rule::Literal(lit) => assert_eq!(lit, &String::from("a")),
                 _ => assert!(false),
             },
             _ => assert!(false),
         }
         match var_token {
-            Token::Rl(rl) => match rl {
-                crate::ebnf_syntax::Rule::Identifier(idt) => assert_eq!(idt, "var".to_string()),
+            Token::Rl(rl) => match rl.deref() {
+                Rule::Identifier(idt) => assert_eq!(idt, &String::from("var")),
                 _ => assert!(false),
             },
             _ => assert!(false),
@@ -290,9 +290,12 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
             _ => assert!(false),
         }
         match tree_1 {
-            Rule::RepetRef(rl) => match rl.deref() {
-                Rule::Identifier(id) => assert_eq!(id, &String::from("yes")),
-                _ => assert!(false),
+            Rule::RepetRef(rl) => match rl.upgrade() {
+                Some(el) => match el.deref() {
+                    Rule::Identifier(id) => assert_eq!(id, &String::from("yes")),
+                    _ => assert!(false),
+                }
+                None => assert!(false),
             },
             _ => assert!(false),
         }
@@ -302,10 +305,13 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         }
         match tree_3 {
             Rule::Optional(el) => match el.deref() {
-                Rule::AlterRef(left, right) => match (*left.deref(), *right.deref()) {
-                    (Rule::Identifier(id1), Rule::Identifier(id2)) => {
-                        assert_eq!(id1, &String::from("function"));
-                        assert_eq!(id2, &String::from("method"));
+                Rule::AlterRef(left, right) => match (left.upgrade(), right.upgrade()) {
+                    (Some(l), Some(r)) => match (l.deref(), r.deref()) {
+                        (Rule::Identifier(id1), Rule::Identifier(id2)) => {
+                            assert_eq!(id1, &String::from("function"));
+                            assert_eq!(id2, &String::from("method"));
+                        },
+                        _ => assert!(false),
                     },
                     _ => assert!(false),
                 },
@@ -315,8 +321,8 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         }
 
         match tree_4 {
-            Rule::Grouping(el) => match *el {
-                Rule::Exception(left, other) => match (*left, other.deref()) {
+            Rule::Grouping(el) => match el .deref(){
+                Rule::Exception(left, other) => match (left.deref(), other.deref()) {
                     (Rule::Grouping(ids), Rule::Identifier(_)) => match ids.deref() {
                         Rule::AlterRef(_, _) => assert!(true),
                         _ => assert!(false),
@@ -329,8 +335,8 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         }
 
         match tree_5 {
-           Rule::Alternation(left, other) => match (left.deref(), *other) {
-            (Rule::Literal(_), Rule::Grouping(right)) => match *right {
+           Rule::Alternation(left, other) => match (left.deref(), other.deref()) {
+            (Rule::Literal(_), Rule::Grouping(right)) => match right.deref() {
                 Rule::AlterRef(_, _) => assert!(true),
                 _ => assert!(false),
             },
@@ -353,10 +359,10 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         let tree_2 = create_rule_tree(&tokens_2);
         let tree_3 = create_rule_tree(&tokens_3);
 
-        let t0 = tree_without_grouping(tree_0);
-        let t1 = tree_without_grouping(tree_1);
-        let t2 = tree_without_grouping(tree_2);
-        let t3 = tree_without_grouping(tree_3);
+        let t0 = tree_without_grouping(Rc::new(tree_0));
+        let t1 = tree_without_grouping(Rc::new(tree_1));
+        let t2 = tree_without_grouping(Rc::new(tree_2));
+        let t3 = tree_without_grouping(Rc::new(tree_3));
         
         match t0 {
             Rule::Identifier(id) => assert_eq!(id, String::from("ok")),
@@ -364,30 +370,41 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         }
 
         match t1 {
-            Rule::RepetRef(id) => match *id {
-                Rule::Identifier(s) => assert_eq!(s, &String::from("yes")),
-                _ => assert!(false)
+            Rule::RepetRef(id) => match id.upgrade() {
+                Some(el) => match el.deref() {
+                    Rule::Identifier(s) => assert_eq!(s, &String::from("yes")),
+                    _ => assert!(false),
+                }
+                _ => assert!(false),
             },
             _ => assert!(false),
         }
         match t2 {
-            Rule::AlterRef(left, right) => match (*left, *right) {
-                (Rule::Literal(lit1), Rule::Literal(lit2)) => {
-                    assert_eq!(lit1, &String::from("abc"));
-                    assert_eq!(lit2, &String::from("def"));
-                },
+            Rule::AlterRef(left, right) => match (left.upgrade(), right.upgrade()) {
+                (Some(l), Some(r)) => match (l.deref(), r.deref()) {
+                    (Rule::Literal(lit1), Rule::Literal(lit2)) => {
+                        assert_eq!(lit1, &String::from("abc"));
+                        assert_eq!(lit2, &String::from("def"));
+                    },
+                    _ => assert!(false),
+                }
                 _ => assert!(false),
             },
             _ => assert!(false),
         }
 
         match t3 {
-            Rule::Concatenation(left, lit3) => match *left {
-                Rule::AlterRef(lit1, lit2) => match (*lit1, *lit2, lit3.deref()) {
-                    (Rule::Literal(s1), Rule::Literal(s2), Rule::Literal(s3)) => {
-                        assert_eq!(s1, &String::from("abc"));
-                        assert_eq!(s2, &String::from("def"));
-                        assert_eq!(s3, &String::from("1234"));
+            Rule::Concatenation(left, lit3) => match left.deref() {
+                Rule::AlterRef(lit1, lit2) => match (lit1.upgrade(), lit2.upgrade(), lit3.deref()) {
+                    (Some(st1), Some(st2), Rule::Literal(s3)) => {
+                        match (st1.deref(), st2.deref()) {
+                            (Rule::Literal(s1), Rule::Literal(s2)) => {
+                                assert_eq!(s1, &String::from("abc"));
+                                assert_eq!(s2, &String::from("def"));
+                                assert_eq!(s3, &String::from("1234"));
+                            },
+                            _ => assert!(false),
+                        }
                     },
                     _ => assert!(false),
                 }
