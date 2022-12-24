@@ -1,5 +1,7 @@
 use regex;
 use std::fs;
+use std::ops::Deref;
+use std::rc::Rc;
 use crate::ebnf_syntax::*;
 use crate::error::PreTreatmentError;
 
@@ -43,7 +45,7 @@ pub fn split_members(rules: Vec<String>) -> Vec<Vec<String>> {
     members
 }
 
-pub fn tokenize(token: String) -> Token<'static> {
+pub fn tokenize(token: String) -> Token {
     let token_as_str = token.as_str();
     match token_as_str {
         "," => Token::Op(Operator::Concatenation),
@@ -57,20 +59,20 @@ pub fn tokenize(token: String) -> Token<'static> {
         ")" => Token::Op(Operator::GroupingR),
         s => {
             if s.starts_with("\"") && s.ends_with("\"") {
-                return Token::Rl(Rule::Literal(s.trim_matches('"').to_string()));
+                return Token::Rl(Rc::new(Rule::Literal(s.trim_matches('"').to_string())));
             } else if s.starts_with("\"") || s.ends_with("\"") {
                 return Token::Invalid;
             }
-            Token::Rl(Rule::Identifier(s.to_string()))
+            Token::Rl(Rc::new(Rule::Identifier(s.to_string())))
         },
     }
 }
 
-pub fn tokenize_rule<'a>(rule: Vec<String>) -> Vec<Token<'a>> {
+pub fn tokenize_rule(rule: Vec<String>) -> Vec<Token> {
     rule.iter().map(|v| tokenize(v.to_string())).collect()
 }
 
-pub fn tokenize_rule_from_str<'a>(rule: String) -> Vec<Token<'a>> {
+pub fn tokenize_rule_from_str<'a>(rule: String) -> Vec<Token> {
     tokenize_rule(rule.split(' ').map(|el| el.to_string()).collect())
 }
 
@@ -243,8 +245,11 @@ pub fn tokens_equals(token1: &Token, token2: &Token) -> bool {
             (Operator::GroupingR, Operator::GroupingR) => true,
             _ => false,
         },
-        (Token::Rl(Rule::Literal(s1)), Token::Rl(Rule::Literal(s2))) => s1 == s2,
-        (Token::Rl(Rule::Identifier(s1)), Token::Rl(Rule::Identifier(s2))) => s1 == s2,
+        (Token::Rl(rl1), Token::Rl(rl2)) => match (rl1.deref(), rl2.deref()) {
+            (Rule::Literal(s1), Rule::Literal(s2)) |
+            (Rule::Identifier(s1), Rule::Identifier(s2)) => s1 == s2,
+            _ => false,
+        }
         _ => false,
     }
 }
