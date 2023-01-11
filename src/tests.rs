@@ -19,31 +19,42 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
     #[test]
     fn split_members_test() {
         let content_test = "float = integer, '.', integer;".to_string();
-        let expected_res = vec!["float", "integer, '.', integer;"];
+        let expected_res = (String::from("float"), String::from("integer, '.', integer;"));
         assert_eq!(split_members_aux(content_test), expected_res);
     }
 
     #[test]
     fn tokenize_test() {
-        let some_literal = "\"a\"".to_string();
+        let some_literal_1 = "'a'".to_string();
+        let some_literal_2 = "\"a\"".to_string();
         let ident = "var".to_string();
         let quote_invalid = "\"mystring".to_string();
         let altern = "|".to_string();
         let opening_repet = "{".to_string();
 
-        let a_token = tokenize(some_literal);
+        let lit1_token = tokenize(some_literal_1);
+        let lit2_token = tokenize(some_literal_2);
         let var_token = tokenize(ident);
         let extra_quote_token = tokenize(quote_invalid);
         let altern_token = tokenize(altern);
         let op_repet_token = tokenize(opening_repet);
 
-        match a_token {
+        match lit1_token {
             Token::Rl(rl) => match rl.deref() {
                 Rule::Literal(lit) => assert_eq!(lit, &String::from("a")),
                 _ => assert!(false),
             },
             _ => assert!(false),
         }
+
+        match lit2_token {
+            Token::Rl(rl) => match rl.deref() {
+                Rule::Literal(lit) => assert_eq!(lit, &String::from("a")),
+                _ => assert!(false),
+            },
+            _ => assert!(false),
+        }
+
         match var_token {
             Token::Rl(rl) => match rl.deref() {
                 Rule::Identifier(idt) => assert_eq!(idt, &String::from("var")),
@@ -103,10 +114,10 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         let tokens_2: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("bad"), String::from("|"), String::from("|"), String::from("}")]);
         let tokens_3: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("bad"), String::from(","), String::from("|"), String::from("}")]);
 
-        assert!(valid_single_operators(&tokens_0));
-        assert!(valid_single_operators(&tokens_1));
-        assert!(valid_single_operators(&tokens_2) == false);
-        assert!(valid_single_operators(&tokens_3) == false);
+        assert!(valid_single_operators(&tokens_as_ref(&tokens_0)));
+        assert!(valid_single_operators(&tokens_as_ref(&tokens_1)));
+        assert!(valid_single_operators(&tokens_as_ref(&tokens_2)) == false);
+        assert!(valid_single_operators(&tokens_as_ref(&tokens_3)) == false);
 
     }
     #[test]
@@ -125,18 +136,28 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
 
     #[test]
     fn rules_equals_test() {
-        let tokens_0: Vec<Token> = tokenize_rule(vec![String::from("abcd")]);
-        let tokens_1: Vec<Token> = tokenize_rule(vec![String::from("abcd")]);
-        let tokens_2: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("abcd"), String::from("|"), String::from("abcd"), String::from("}")]);
-        let tokens_3: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("abcd"), String::from("|"), String::from("abcd"), String::from("}")]);
+        let tokens_0: Vec<Token> = tokenize_rule_from_str(String::from("abcd"));
+        let tokens_1: Vec<Token> = tokenize_rule_from_str(String::from("abcd"));
+        let tokens_2: Vec<Token> = tokenize_rule_from_str(String::from("{ abcd | ok }"));
+        let tokens_3: Vec<Token> = tokenize_rule_from_str(String::from("{ abcd | err }"));
+        let tokens_4: Vec<Token> = tokenize_rule_from_str(String::from("abcd|(efg)"));
+        let tokens_5: Vec<Token> = tokenize_rule_from_str(String::from("abcd|(efg)"));
+        let tokens_6: Vec<Token> = tokenize_rule_from_str(String::from("ab,ok,cd"));
+        let tokens_7: Vec<Token> = tokenize_rule_from_str(String::from("ab,ok,cd"));
 
         let t0 = tokens_as_ref(&tokens_0);
         let t1 = tokens_as_ref(&tokens_1);
         let t2 = tokens_as_ref(&tokens_2);
         let t3 = tokens_as_ref(&tokens_3);
+        let t4 = tokens_as_ref(&tokens_4);
+        let t5 = tokens_as_ref(&tokens_5);
+        let t6 = tokens_as_ref(&tokens_6);
+        let t7 = tokens_as_ref(&tokens_7);
 
         assert!(rules_equals(&t0, &t1));
-        assert!(rules_equals(&t2, &t3));
+        assert!(!rules_equals(&t2, &t3));
+        assert!(rules_equals(&t4, &t5));
+        assert!(rules_equals(&t6, &t7));
     }
 
     #[test]
@@ -163,10 +184,10 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
 
     #[test]
     fn least_prior_is_unary_test() {
-        let tokens_0: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("123"), String::from("}")]);
-        let tokens_1: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("a"), String::from(","), String::from("b"), String::from("|"), String::from("c"), String::from("}")]);
-        let tokens_2: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("a"), String::from(","), String::from("b"), String::from("}"), String::from("|"), String::from("c")]);
-        let tokens_3: Vec<Token> = tokenize_rule(vec![String::from("a"), String::from(","), String::from("{"), String::from("b"), String::from("|"), String::from("c"), String::from("}")]);
+        let tokens_0: Vec<Token> = tokenize_rule_from_str(String::from("{ 123 }"));
+        let tokens_1: Vec<Token> = tokenize_rule_from_str(String::from("{a,b|c}"));
+        let tokens_2: Vec<Token> = tokenize_rule_from_str(String::from("{a,b}|c"));
+        let tokens_3: Vec<Token> = tokenize_rule_from_str(String::from("a,{b|c}"));
         
         assert!(least_prior_is_unary(&tokens_as_ref(&tokens_0)));
         assert!(least_prior_is_unary(&tokens_as_ref(&tokens_1)));
@@ -176,72 +197,92 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
     
     #[test]
     fn get_least_prior_binary_index_test() {
-        let tokens_0: Vec<Token> = tokenize_rule(vec![String::from("abc"), String::from("|"), String::from("123")]);
-        let tokens_1: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("abcd"), String::from(","), String::from("zzz"), String::from("}"), String::from(","), String::from("123")]);
-        let tokens_2: Vec<Token> = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("b"), String::from("c")]);
+        let tokens_0: Vec<Token> = tokenize_rule_from_str(String::from("abc"));
+        let tokens_1: Vec<Token> = tokenize_rule_from_str(String::from("{abc}"));
+        let tokens_2: Vec<Token> = tokenize_rule_from_str(String::from("abc|123"));
+        let tokens_3: Vec<Token> = tokenize_rule_from_str(String::from("{abc,zzz},123"));
+        let tokens_4: Vec<Token> = tokenize_rule_from_str(String::from("a|b|c"));
+        let tokens_5: Vec<Token> = tokenize_rule_from_str(String::from("a,b|c"));
+        let tokens_6: Vec<Token> = tokenize_rule_from_str(String::from("a,b-c|d"));
+        let tokens_7: Vec<Token> = tokenize_rule_from_str(String::from("(a,b)-(c,d)|(e,f)"));
         
         let tokens_ref_0: Vec<&Token> = tokens_as_ref(&tokens_0);
         let tokens_ref_1: Vec<&Token> = tokens_as_ref(&tokens_1);
         let tokens_ref_2: Vec<&Token> = tokens_as_ref(&tokens_2);
-        
+        let tokens_ref_3: Vec<&Token> = tokens_as_ref(&tokens_3);
+        let tokens_ref_4: Vec<&Token> = tokens_as_ref(&tokens_4);
+        let tokens_ref_5: Vec<&Token> = tokens_as_ref(&tokens_5);
+        let tokens_ref_6: Vec<&Token> = tokens_as_ref(&tokens_6);
+        let tokens_ref_7: Vec<&Token> = tokens_as_ref(&tokens_7);
+
         let index_0 = get_least_prior_binary_index(&tokens_ref_0);
         let index_1 = get_least_prior_binary_index(&tokens_ref_1);
         let index_2 = get_least_prior_binary_index(&tokens_ref_2);
+        let index_3 = get_least_prior_binary_index(&tokens_ref_3);
+        let index_4 = get_least_prior_binary_index(&tokens_ref_4);
+        let index_5 = get_least_prior_binary_index(&tokens_ref_5);
+        let index_6= get_least_prior_binary_index(&tokens_ref_6);
+        let index_7= get_least_prior_binary_index(&tokens_ref_7);
 
-        assert_eq!(index_0, Some(1));
-        assert_eq!(index_1, Some(5));
+        assert_eq!(index_0, None);
+        assert_eq!(index_1, None);
         assert_eq!(index_2, Some(1));
+        assert_eq!(index_3, Some(5));
+        assert_eq!(index_4, Some(1));
+        assert_eq!(index_5, Some(3));
+        assert_eq!(index_6, Some(5));
+        assert_eq!(index_7, Some(11));
     }
 
     #[test]
     fn with_priority_parentheses_test() {
-        let tokens_0: Vec<Token> = tokenize_rule(vec![String::from("abc")]);
-        let tokens_1: Vec<Token> = tokenize_rule(vec![String::from("abc"), String::from("|"), String::from("123")]);
-        let tokens_2: Vec<Token> = tokenize_rule(vec![String::from("["), String::from("abc"), String::from("|"), String::from("def"), String::from("]")]);
-        let tokens_3: Vec<Token> = tokenize_rule(vec![String::from("a"), String::from(","), String::from("b"), String::from("|"), String::from("c")]);
-        let tokens_4: Vec<Token> = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("b"), String::from(","), String::from("c")]);
-        let tokens_5: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("a"), String::from("-"), String::from("b"), String::from("|"), String::from("c"), String::from("}")]);
-        let tokens_6: Vec<Token> = tokenize_rule(vec![String::from("("), String::from("a"), String::from("|"), String::from("b"), String::from(")"), String::from("-"), String::from("c")]);
-        let tokens_7: Vec<Token> = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("b"), String::from("|"), String::from("c")]);
-        let tokens_8: Vec<Token> = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("b"), String::from("|"), String::from("c"), String::from("|"), String::from("d")]);
-        let tokens_9: Vec<Token> = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("b"), String::from(","), String::from("c"), String::from("|"), String::from("d")]);
-        let tokens_10: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("a"), String::from(","), String::from("b"), String::from("}"), String::from("|"), String::from("["), String::from("c"), String::from("-"), String::from("d"), String::from("]")]);
+        let tokens_0: Vec<Token> = tokenize_rule_from_str(String::from("abc"));
+        let tokens_1: Vec<Token> = tokenize_rule_from_str(String::from("abc | 123"));
+        let tokens_2: Vec<Token> = tokenize_rule_from_str(String::from("[abc|def]"));
+        let tokens_3: Vec<Token> = tokenize_rule_from_str(String::from("a,b|c"));
+        let tokens_4: Vec<Token> = tokenize_rule_from_str(String::from("a|b,c"));
+        let tokens_5: Vec<Token> = tokenize_rule_from_str(String::from("{a-b|c}"));
+        let tokens_6: Vec<Token> = tokenize_rule_from_str(String::from("(a|b)-c"));
+        let tokens_7: Vec<Token> = tokenize_rule_from_str(String::from("a|b|c"));
+        let tokens_8: Vec<Token> = tokenize_rule_from_str(String::from("a|b|c|d"));
+        let tokens_9: Vec<Token> = tokenize_rule_from_str(String::from("a|b,c|d"));
+        let tokens_10: Vec<Token> = tokenize_rule_from_str(String::from("{a,b}|[c-d]"));
         
-        let mut tokens_ref_0: Vec<&Token> = tokens_as_ref(&tokens_0);
-        let mut tokens_ref_1: Vec<&Token> = tokens_as_ref(&tokens_1);
-        let mut tokens_ref_2: Vec<&Token> = tokens_as_ref(&tokens_2);
-        let mut tokens_ref_3: Vec<&Token> = tokens_as_ref(&tokens_3);
-        let mut tokens_ref_4: Vec<&Token> = tokens_as_ref(&tokens_4);
-        let mut tokens_ref_5: Vec<&Token> = tokens_as_ref(&tokens_5);
-        let mut tokens_ref_6: Vec<&Token> = tokens_as_ref(&tokens_6);
-        let mut tokens_ref_7: Vec<&Token> = tokens_as_ref(&tokens_7);
-        let mut tokens_ref_8: Vec<&Token> = tokens_as_ref(&tokens_8);
-        let mut tokens_ref_9: Vec<&Token> = tokens_as_ref(&tokens_9);
-        let mut tokens_ref_10: Vec<&Token> = tokens_as_ref(&tokens_10);
+        let tokens_ref_0: Vec<&Token> = tokens_as_ref(&tokens_0);
+        let tokens_ref_1: Vec<&Token> = tokens_as_ref(&tokens_1);
+        let tokens_ref_2: Vec<&Token> = tokens_as_ref(&tokens_2);
+        let tokens_ref_3: Vec<&Token> = tokens_as_ref(&tokens_3);
+        let tokens_ref_4: Vec<&Token> = tokens_as_ref(&tokens_4);
+        let tokens_ref_5: Vec<&Token> = tokens_as_ref(&tokens_5);
+        let tokens_ref_6: Vec<&Token> = tokens_as_ref(&tokens_6);
+        let tokens_ref_7: Vec<&Token> = tokens_as_ref(&tokens_7);
+        let tokens_ref_8: Vec<&Token> = tokens_as_ref(&tokens_8);
+        let tokens_ref_9: Vec<&Token> = tokens_as_ref(&tokens_9);
+        let tokens_ref_10: Vec<&Token> = tokens_as_ref(&tokens_10);
 
-        let t0 = with_priority_parentheses(&mut tokens_ref_0);
-        let t1 = with_priority_parentheses(&mut tokens_ref_1);
-        let t2 = with_priority_parentheses(&mut tokens_ref_2);
-        let t3 = with_priority_parentheses(&mut tokens_ref_3);
-        let t4 = with_priority_parentheses(&mut tokens_ref_4);
-        let t5 = with_priority_parentheses(&mut tokens_ref_5);
-        let t6 = with_priority_parentheses(&mut tokens_ref_6);
-        let t7 = with_priority_parentheses(&mut tokens_ref_7);
-        let t8 = with_priority_parentheses(&mut tokens_ref_8);
-        let t9 = with_priority_parentheses(&mut tokens_ref_9);
-        let t10 = with_priority_parentheses(&mut tokens_ref_10);
+        let t0 = with_priority_parentheses( tokens_ref_0);
+        let t1 = with_priority_parentheses( tokens_ref_1);
+        let t2 = with_priority_parentheses(tokens_ref_2);
+        let t3 = with_priority_parentheses(tokens_ref_3);
+        let t4 = with_priority_parentheses( tokens_ref_4);
+        let t5 = with_priority_parentheses(tokens_ref_5);
+        let t6 = with_priority_parentheses( tokens_ref_6);
+        let t7 = with_priority_parentheses( tokens_ref_7);
+        let t8 = with_priority_parentheses( tokens_ref_8);
+        let t9 = with_priority_parentheses( tokens_ref_9);
+        let t10 = with_priority_parentheses( tokens_ref_10);
 
-        let expected_0 = tokenize_rule(vec![String::from("abc")]);
-        let expected_1 = tokenize_rule(vec![String::from("("), String::from("abc"), String::from("|"), String::from("123"), String::from(")")]);
-        let expected_2 = tokenize_rule(vec![String::from("["), String::from("abc"), String::from("|"), String::from("def"), String::from("]")]);
-        let expected_3 = tokenize_rule(vec![String::from("("), String::from("a"), String::from(","), String::from("b"), String::from(")"), String::from("|"), String::from("c")]);
-        let expected_4 = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("("), String::from("b"), String::from(","), String::from("c"), String::from(")")]);
-        let expected_5 = tokenize_rule(vec![String::from("{"), String::from("("), String::from("a"), String::from("-"), String::from("b"), String::from(")"), String::from("|"), String::from("c"), String::from("}")]);
-        let expected_6 = tokenize_rule(vec![String::from("("), String::from("a"), String::from("|"), String::from("b"), String::from(")"), String::from("-"), String::from("c")]);
-        let expected_7 = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("("), String::from("b"), String::from("|"), String::from("c"), String::from(")")]);
-        let expected_8 = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("("), String::from("b"), String::from("|"), String::from("("), String::from("c"), String::from("|"), String::from("d"), String::from(")"), String::from(")")]);
-        let expected_9 = tokenize_rule(vec![String::from("a"), String::from("|"), String::from("("), String::from("("), String::from("b"), String::from(","), String::from("c"), String::from(")"), String::from("|"), String::from("d"), String::from(")")]);
-        let expected_10 = tokenize_rule(vec![String::from("("), String::from("{"), String::from("a"), String::from(","), String::from("b"), String::from("}"), String::from("|"), String::from("["), String::from("c"), String::from("-"), String::from("d"), String::from("]"), String::from(")")]);
+        let expected_0: Vec<Token> = tokenize_rule_from_str(String::from("abc"));
+        let expected_1: Vec<Token> = tokenize_rule_from_str(String::from("(abc | 123)"));
+        let expected_2: Vec<Token> = tokenize_rule_from_str(String::from("[abc|def]"));
+        let expected_3: Vec<Token> = tokenize_rule_from_str(String::from("(a,b)|c"));
+        let expected_4: Vec<Token> = tokenize_rule_from_str(String::from("a|(b,c)"));
+        let expected_5: Vec<Token> = tokenize_rule_from_str(String::from("{(a-b)|c}"));
+        let expected_6: Vec<Token> = tokenize_rule_from_str(String::from("(a|b)-(c)"));
+        let expected_7: Vec<Token> = tokenize_rule_from_str(String::from("a|(b|c)"));
+        let expected_8: Vec<Token> = tokenize_rule_from_str(String::from("a|(b|(c|d))"));
+        let expected_9: Vec<Token> = tokenize_rule_from_str(String::from("a|((b,c)|d)"));
+        let expected_10: Vec<Token> = tokenize_rule_from_str(String::from("{a,b}|([c-d])"));
         
         let tokens_exp_ref_0 = tokens_as_ref(&expected_0);
         let tokens_exp_ref_1 = tokens_as_ref(&expected_1);
@@ -419,15 +460,15 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
 
     #[test]
     fn are_same_tree_test() {
-        let tokens_0 = tokenize_rule(vec![String::from("ok")]);
-        let tokens_1 = tokenize_rule(vec![String::from("{"), String::from("yes"), String::from("}")]);
-        let tokens_2 = tokenize_rule(vec![String::from("("), String::from("\"abc\""), String::from("|"), String::from("\"def\""), String::from(")")]);
-        let tokens_3 = tokenize_rule(vec![String::from("("), String::from("foo"), String::from("|"), String::from("bar"), String::from(")"), String::from("-"), String::from("var")]);
+        let tokens_0 = tokenize_rule_from_str(String::from("ok"));
+        let tokens_1 = tokenize_rule_from_str(String::from("{ yes }"));
+        let tokens_2 = tokenize_rule_from_str(String::from("('abc'|'def')"));
+        let tokens_3 = tokenize_rule_from_str(String::from("(foo|bar)-var"));
 
-        let tokens_a = tokenize_rule(vec![String::from("ok")]);
-        let tokens_b = tokenize_rule(vec![String::from("{"), String::from("yes"), String::from("}")]);
-        let tokens_c = tokenize_rule(vec![String::from("("), String::from("\"abc\""), String::from("|"), String::from("\"def\""), String::from(")")]);
-        let tokens_d = tokenize_rule(vec![String::from("("), String::from("foo"), String::from("|"), String::from("bar"), String::from(")"), String::from("-"), String::from("var")]);
+        let tokens_a = tokenize_rule_from_str(String::from("ok"));
+        let tokens_b = tokenize_rule_from_str(String::from("{ yes }"));
+        let tokens_c = tokenize_rule_from_str(String::from("('abc'|'def')"));
+        let tokens_d = tokenize_rule_from_str(String::from("(foo|bar)-var"));
 
         let tree_0 = create_rule_tree(&tokens_0);
         let tree_1 = create_rule_tree(&tokens_1);
@@ -443,4 +484,5 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         assert!(are_same_tree(&tree_1, &tree_b));
         assert!(are_same_tree(&tree_2, &tree_c));
         assert!(are_same_tree(&tree_3, &tree_d));
+
     }
