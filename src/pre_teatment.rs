@@ -6,9 +6,11 @@ use crate::ebnf_syntax::*;
 use crate::error::PreTreatmentError;
 
 pub fn split_lines(content: String) -> Vec<String> {
-    let re = regex::Regex::new(r".+;").unwrap();
+    let re = regex::Regex::new(r"[^;\n]+;").unwrap();
     let content_str = content.as_str();
-    let matches_iter = re.find_iter(content_str).map(|m| m.as_str());
+    let matches_iter = re
+        .find_iter(content_str)
+        .map(|m| m.as_str().trim());
     let mut v: Vec<String> = Vec::new();
     for mat in matches_iter {
         v.push(mat.to_string());
@@ -28,17 +30,17 @@ pub fn split_lines_from_file(filepath: &str) -> Result<Vec<String>, PreTreatment
     }
 }
 
-pub fn split_members_aux(rule: String) -> Vec<String>{
+pub fn split_members_aux(rule: String) -> (String, String) {
     let rule_split: Vec<&str> = rule.split("=").collect();
-    let rules: Vec<String> = rule_split.iter()
+    let mut rules: Vec<String> = rule_split.iter()
         .map(|mem| mem.trim())
         .map(|mem| mem.to_string())
         .collect();
-    rules
+    (rules.remove(0), rules.remove(0))
 }
 
-pub fn split_members(rules: Vec<String>) -> Vec<Vec<String>> {
-    let mut members: Vec<Vec<String>> = Vec::new();
+pub fn split_members(rules: Vec<String>) -> Vec<(String, String)> {
+    let mut members: Vec<(String, String)> = Vec::new();
     for r in rules.iter() {
         members.push(split_members_aux(r.to_string()));
     }
@@ -60,6 +62,10 @@ pub fn tokenize(token: String) -> Token {
         s => {
             if s.starts_with("\"") && s.ends_with("\"") {
                 return Token::Rl(Rc::new(Rule::Literal(s.trim_matches('"').to_string())));
+            } else if s.starts_with("\'") && s.ends_with("\'") {
+                return Token::Rl(Rc::new(Rule::Literal(s.trim_matches('\'').to_string())));
+            } else if s.starts_with("\"") || s.starts_with("\'") || s.ends_with("\"") || s.ends_with("\'") {
+                return Token::Invalid;
             } else if s.starts_with("\"") || s.ends_with("\"") {
                 return Token::Invalid;
             }
@@ -73,7 +79,27 @@ pub fn tokenize_rule(rule: Vec<String>) -> Vec<Token> {
 }
 
 pub fn tokenize_rule_from_str<'a>(rule: String) -> Vec<Token> {
-    tokenize_rule(rule.split(' ').map(|el| el.to_string()).collect())
+    let re = regex::Regex::new(r"([^\u0022\||,|\-|\{|\(|\[|\]|\)|\}]+)|(\||,|\-|\{|\(|\[|\]|\)|\})|(\u0022[^\u0022]+\u0022)|('[^']+')").unwrap();
+    let matches_iter = re.find_iter(rule.as_str());
+    let m: Vec<String> = matches_iter
+        .map(|el| el.as_str().trim().to_string())
+        .filter(|el| el != &String::from(""))
+        .collect();
+    tokenize_rule(m)
+}
+
+pub fn tokenize_file(file: &str) -> Vec<Vec<Token>> {
+    let file_lines = split_lines_from_file(file);
+    match file_lines {
+        Ok(v) => {
+            let res = v
+            .into_iter()
+            .map(|el| tokenize_rule_from_str(el)).collect();
+            print!("{:?}", res);
+            res
+        },
+        Err(_) => vec![vec![Token::Invalid]],
+    }
 }
 
 pub fn validate_rule(rules: Vec<Token>) -> bool {
@@ -83,13 +109,22 @@ pub fn validate_rule(rules: Vec<Token>) -> bool {
     })
 }
 
+
 pub fn brackets_paired(operator1: &Operator, operator2: &Operator) -> bool {
     match (operator1,operator2) {
         (Operator::OptionalL, Operator::OptionalR) => true,
         (Operator::GroupingL, Operator::GroupingR) => true,
         (Operator::RepetitionL, Operator::RepetitionR) => true,
         _ => false,
-
+        
+    }
+}
+pub fn is_binary(operator: &Operator) -> bool {
+    match operator {
+        Operator::Alternation => true,
+        Operator::Concatenation => true,
+        Operator::Exception => true,
+        _ => false
     }
 }
 
@@ -137,7 +172,7 @@ pub fn valid_dual_operators(rule: &Vec<Token>) -> bool {
 operators_test.len() == 0
 }
 
-pub fn valid_single_operators(rule: &Vec<Token>) -> bool {
+pub fn valid_single_operators(rule: &Vec<&Token>) -> bool {
     match (rule.first(), rule.last()) {
         (None, None) => todo!(),
         (Some(first), Some(last)) => match (first, last) {
@@ -257,7 +292,7 @@ pub fn tokens_equals(token1: &Token, token2: &Token) -> bool {
 pub fn rules_equals(rule1: &Vec<&Token>, rule2: &Vec<&Token>) -> bool {
     for i in 0..rule1.len() {
         let a = rule1.get(i);
-        let b = rule1.get(i);
+        let b = rule2.get(i);
         match (a, b) {
             (None, _) => return false,
             (_, None) => return false,
