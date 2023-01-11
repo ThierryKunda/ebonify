@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use std::ops::Deref;
 
-use crate::{ebnf_syntax::*, pre_teatment::{brackets_paired}};
+use crate::{ebnf_syntax::*, pre_teatment::{brackets_paired, tokenize_rule_from_str, split_members, is_binary, valid_single_operators}};
 
 
 pub fn are_same_tree<'a>(rule_1: &'a Rule, rule_2: &'a Rule) -> bool {
@@ -258,9 +258,15 @@ pub fn copy_rule_tree(rule: Rc<Rule>) -> Rule {
 }
 
 pub fn create_rule_tree<'a>(rule: &'a Vec<Token>) -> Rule {
-    let mut rule_as_ref = tokens_as_ref(rule);
-    let rule_with_prior_brackets = with_priority_parentheses(&mut rule_as_ref);
-    create_rule_tree_by_ref(rule_with_prior_brackets)
+    let rule_as_ref = tokens_as_ref(rule);
+    let rule_with_prior_brackets = with_priority_parentheses(rule_as_ref);
+    for tk in rule_with_prior_brackets.iter() {
+        tk.show();
+    }
+    println!();
+    let res = create_rule_tree_by_ref(rule_with_prior_brackets);
+    println!("\n{res:?}");
+    res
 }
 
 pub fn create_rule_tree_by_ref(rule: Vec<&Token>) -> Rule {
@@ -317,149 +323,99 @@ pub fn create_rule_tree_by_ref(rule: Vec<&Token>) -> Rule {
     Rule::Identifier("Invalid".to_string())
 }
 
-pub fn with_priority_parentheses<'a, 'b>(rule: &'a mut Vec<&'b Token>) -> Vec<&'b Token> {
-    let mut new_rule: Vec<&Token> = Vec::new();
-    match rule.len() {
-        1 => new_rule.push(rule.first().unwrap()), // with_priority_parentheses(a) -> a
-        3 => {
-            let (first, mid, last) = (
-                *rule.first().unwrap(),
-                *rule.get(1).unwrap(),
-                *rule.last().unwrap()
-            );
-            match (first, mid, last) {
-                (Token::Op(_), Token::Rl(_), Token::Op(_)) => {
-                    // with_priority_parentheses(< a >) -> < a >
-                    new_rule.push(first);
-                    new_rule.push(mid);
-                    new_rule.push(last);
-                },
-                (Token::Rl(_), Token::Op(op), Token::Rl(_)) => match op {
-                    // with_priority_parentheses(a . b) -> ( a . b )
-                    Operator::Alternation | Operator::Concatenation | Operator::Exception => {
-                        new_rule.push(&Token::Op(Operator::GroupingL));
-                        new_rule.push(first);
-                        new_rule.push(mid);
-                        new_rule.push(last);
-                        new_rule.push(&Token::Op(Operator::GroupingR));
+pub fn with_priority_parentheses<'a>(rule: Vec<&'a Token>) -> Vec<&'a Token> {
+    let rule_len = rule.len();
+    if rule_len == 1 {
+        rule
+    } else if rule_len == 3 {
+        let (first, mid, last) = (
+            *rule.first().unwrap(),
+            *rule.get(1).unwrap(),
+            *rule.last().unwrap()
+        );
+        match (first, mid, last) {
+            // with_priority_parentheses(< a >) -> < a >
+            (Token::Op(_), Token::Rl(_), Token::Op(_)) => rule,
+            // with_priority_parentheses(a . b) -> ( a . b )
+            (Token::Rl(_), Token::Op(_), Token::Rl(_)) => surround_with_grouping(rule),
+            _ => vec![&Token::Invalid],
+        }
+    } else if rule_len == 5 {
+        let (first, second, third, fourth, last) = (
+            *rule.get(0).unwrap(),
+            *rule.get(1).unwrap(),
+            *rule.get(2).unwrap(),
+            *rule.get(3).unwrap(),
+            *rule.get(4).unwrap()
+        );
+        match (first, third, last) {
+            // with_priority_parentheses(< a . b >) -> < a . b >
+            (Token::Op(_), Token::Op(_), Token::Op(_)) => rule,
+            // with_priority_parentheses(a . b * c) -> ( a . b ) * c if . >> *
+            //                                         a . ( b * c ) else
+            (Token::Rl(_), Token::Rl(_), Token::Rl(_)) => match (second, fourth) {
+                    (Token::Op(op1), Token::Op(op2)) => if has_highter_priority_to(op1, op2) {
+                        concat_rules(
+                            surround_with_grouping(vec![first, second, third]),
+                            vec![fourth, last],
+                            None
+                        )
+                    } else {
+                        concat_rules(
+                            vec![first, second],
+                            surround_with_grouping(vec![third, fourth, last]),
+                            None
+                        )
                     },
-                    _ => rule.push(&Token::Invalid),
-                },
-                _ => (),
+                    _ => vec![&Token::Invalid]
             }
-        },
-        5 => {
-            let (first, second, third, fourth, last) = (
-                *rule.get(0).unwrap(),
-                *rule.get(1).unwrap(),
-                *rule.get(2).unwrap(),
-                *rule.get(3).unwrap(),
-                *rule.get(4).unwrap()
-            );
-            match (first, third, last) {
-                (Token::Op(_), Token::Op(_), Token::Op(_)) => {
-                    // with_priority_parentheses(< a . b >) -> < a . b >
-                    new_rule.append(&mut vec![first, second, third, fourth, last]);
+            _ => vec![&Token::Invalid]
+        }
+    } else {
+        if least_prior_is_unary(&rule) {
+            // with_priority_parentheses(< A >) -> < with_priority_parentheses(A) >
+            let first = *rule.first().unwrap();
+            let last = *rule.last().unwrap();
+            concat_rules(
+                vec![first], 
+                concat_rules(
+                    with_priority_parentheses(get_rule_without_first_last(rule)), 
+                    vec![last],
+                    None
+                ),
+                None
+            )
+        } else {
+            // with_priority_parentheses(A . B * C) -> with_priority_parentheses(A . B) * with_priority_parentheses(C) if . >> *
+            //                                         with_priority_parentheses(A) . with_priority_parentheses(B * C)
+            let least_prior_idx = get_least_prior_binary_index(&rule);
+            match least_prior_idx {
+                Some(i) => {
+                    let (left_part, right_part) = split_rule_by_index(&rule, i);
+                    concat_rules(
+                        with_priority_parentheses(left_part),
+                        surround_with_grouping(with_priority_parentheses(right_part)),
+                        rule.get(i)
+                    )
                 },
-                (Token::Rl(_), Token::Rl(_), Token::Rl(_)) => {
-                    // with_priority_parentheses(a . b * c) -> ( a . b ) * c if . >> *
-                    //                                         a . ( b * c ) else
-                    match (second, fourth) {
-                        (Token::Op(op1), Token::Op(op2)) => {
-                            if has_highter_priority_to(op1, op2) {
-                                new_rule.push(&Token::Op(Operator::GroupingL));
-                                new_rule.append(&mut vec![first, second, third]);
-                                new_rule.push(&Token::Op(Operator::GroupingR));
-                                new_rule.append(&mut vec![fourth, last]);
-                            } else {
-                                new_rule.append(&mut vec![first, second]);
-                                new_rule.push(&Token::Op(Operator::GroupingL));
-                                new_rule.append(&mut vec![third, fourth, last]);
-                                new_rule.push(&Token::Op(Operator::GroupingR));
-                            }
-                        },
-                        _ => new_rule.push(&Token::Invalid),
-                    }
-                }
-                _ => new_rule.push(&Token::Invalid),
+                None => vec![&Token::Invalid],
             }
         }
-        _ => if least_prior_is_unary(rule) {
-            // with_priority_parentheses(< A >) -> < with_priority_parentheses(A) >
-            let mut sub_rule: Vec<&Token> = Vec::new();
-            new_rule.push(*rule.first().unwrap());
-            for i in 1..rule.len()-1 {
-                sub_rule.push(*rule.get(i).unwrap());
-            }
-            for el in with_priority_parentheses(&mut sub_rule) {
-                new_rule.push(el);
-            }
-            rule.push(*rule.last().unwrap());
-        } else {
-            let idx1 = get_least_prior_binary_index(rule);
-            match idx1 {
-                Some(i) => {
-                    let op1 = *rule.get(i).unwrap();
-                    let (mut left, mut right) = split_rule_by_index(rule, i);
-                    let idx2 = get_least_prior_binary_index(&right);
-                    match idx2 {
-                        Some(j) => {
-                            // with_priority_parentheses(A . B * C) -> with_priority_parentheses(A . B) * with_priority_parentheses(C) if . >> *
-                            //                                         with_priority_parentheses(A) . with_priority_parentheses(B * C)
-                            let op2 = *rule.get(j).unwrap();
-                            let (mut mid, mut end) = split_rule_by_index(&right, i);
-                            match (op1, op2) {
-                                (Token::Op(o1), Token::Op(o2)) => if has_highter_priority_to(o1, o2) {
-                                    new_rule.push(&Token::Op(Operator::GroupingL));
-                                    for el in with_priority_parentheses(&mut left) {
-                                        new_rule.push(el);
-                                    }
-                                    new_rule.push(op1);
-                                    for el in with_priority_parentheses(&mut mid) {
-                                        new_rule.push(el);
-                                    }
-                                    new_rule.push(&Token::Op(Operator::GroupingR));
-                                    new_rule.push(op2);
-                                    for el in with_priority_parentheses(&mut end) {
-                                        new_rule.push(el);
-                                    }
-
-                                } else {
-                                    for el in with_priority_parentheses(&mut left) {
-                                        new_rule.push(el);
-                                    }
-                                    new_rule.push(op1);
-                                    new_rule.push(&Token::Op(Operator::GroupingL));
-                                    for el in with_priority_parentheses(&mut mid) {
-                                        new_rule.push(el);
-                                    }
-                                    new_rule.push(op2);
-                                    for el in with_priority_parentheses(&mut end) {
-                                        new_rule.push(el);
-                                    }
-                                    new_rule.push(&Token::Op(Operator::GroupingR));
-                                },
-                                _ => new_rule.push(&Token::Invalid),
-                            }
-                        },
-                        None => {
-                            // with_priority_parentheses(A . B) -> (with_priority_parentheses(A) . with_priority_parentheses(B))
-                            new_rule.push(&Token::Op(Operator::GroupingL));
-                            new_rule.append(&mut with_priority_parentheses(&mut left));
-                            new_rule.push(op1);
-                            new_rule.append(&mut with_priority_parentheses(&mut right));
-                            new_rule.push(&Token::Op(Operator::GroupingL));
-                        }
-                    }
-
-                },
-                None => new_rule.push(&Token::Invalid),
-            }
-        },
-
     }
-    
-    new_rule
+}
+
+pub fn concat_rules<'a>(mut rule1: Vec<&'a Token>, mut rule2: Vec<&'a Token>, middle: Option<&&'a Token>) -> Vec<&'a Token> {
+    if let Some(m) = middle {
+        rule1.push(*m);
+    }
+    rule1.append(&mut rule2);
+    rule1
+}
+
+pub fn surround_with_grouping<'a>(mut rule: Vec<&'a Token>) -> Vec<&'a Token> {
+    rule.insert(0, &Token::Op(Operator::GroupingL));
+    rule.push(&Token::Op(Operator::GroupingR));
+    rule
 }
 
 pub fn split_rule_by_index<'a>(rule: &Vec<&'a Token>, split_pos: usize) -> (Vec<&'a Token>, Vec<&'a Token>) {
@@ -493,45 +449,53 @@ pub fn get_rule_without_first_last(rule: Vec<&Token>) -> Vec<&Token>{
 }
 
 pub fn get_least_prior_binary_index(rule: &Vec<&Token>) -> Option<usize> {
-    if rule.len() < 3 {
-        return None;
-    }
-    if rule.len() == 3 {
-        return Some(1);
-    }
-    match rule.first().unwrap() {
-        Token::Op(_) => (),
-        Token::Rl(_) => return Some(1),
-        Token::Invalid => return None,
-    }
-    let mut test_stack: Vec<&Token> = Vec::new();
-    test_stack.push(rule.first().unwrap());
-    let mut i = 1;
-    while !test_stack.is_empty() && i < rule.len()-1 {
-        match (test_stack.last().unwrap(), rule.get(i).unwrap()) {
-            (Token::Op(last_of_stack), Token::Op(current)) => {
-                match (last_of_stack, current) {
-                    (Operator::RepetitionL, Operator::RepetitionR) |
-                    (Operator::OptionalL, Operator::OptionalR) |
-                    (Operator::GroupingL, Operator::GroupingR) => { test_stack.pop(); },
-                    (_, Operator::Alternation) | (_, Operator::Concatenation) | (_, Operator::Exception) => (),
-                    _ => test_stack.push(rule.get(i).unwrap()),
+    let mut sub_tree_idx = 0_usize; 
+    let mut ops_tuples: Vec<(usize, usize, &Operator)> = Vec::new();
+    let mut stack_test: Vec<&Operator> = Vec::new();
+    for (i, tk) in rule.iter().enumerate() {
+        if let Token::Op(op) = tk {
+            if is_binary(op) {
+                ops_tuples.push((i, sub_tree_idx, op));
+            } else {
+                if let Some(last) = stack_test.last() {
+                    if brackets_paired(last, op) {
+                        stack_test.pop();
+                        sub_tree_idx -= 1;
+                    } else {
+                        stack_test.push(op);
+                        sub_tree_idx += 1;
+                    }
+                } else {
+                    stack_test.push(op);
+                    sub_tree_idx += 1;
                 }
             }
-            _ => ()
-        }
-        i += 1;
-    }
-    for j in i..rule.len()-1 {
-        match rule.get(j).unwrap() {
-            Token::Op(op) => match op {
-                Operator::Alternation | Operator::Concatenation | Operator::Exception => return Some(j),
-                _ => (),
-            }
-            _ => ()
         }
     }
-    return None;
+    let first_layer_ops: Vec<(usize, usize, &Operator)> = ops_tuples.into_iter()
+        .filter(|op| if let (_, 0, _) = op {
+            true
+        } else {
+            false
+        })
+        .collect();
+    let mut res;
+    match first_layer_ops.get(0) {
+        Some(first) => res = first,
+        None => return None,
+    }
+    for i in 0..first_layer_ops.len() {
+        match first_layer_ops.get(i) {
+            Some(op) => {
+                if has_highter_priority_to(res.2, op.2) {
+                    res = op;
+                }
+            },
+            None => (),
+        }
+    }
+    Some(res.0)
+    
 }
 
 pub fn tokens_as_ref(rule: &Vec<Token>) -> Vec<&Token> {
@@ -548,8 +512,6 @@ pub fn has_highter_priority_to(op1: &Operator, op2: &Operator) -> bool {
         (&Operator::Exception, _) => true,
         (&Operator::Concatenation, &Operator::Concatenation) => false,
         (&Operator::Concatenation, _) => true,
-        (&Operator::Alternation, &Operator::Alternation) => false,
-        (&Operator::Alternation, _) => true,
         _ => false,
     }
 }
@@ -560,7 +522,7 @@ pub fn least_prior_is_unary(rule: &Vec<&Token>) -> bool {
     for i in 1..rule.len()-1 {
         test_vec.push(rule.get(i).unwrap());
     }
-    return valid_dual_ref_operators(&test_vec);
+    return valid_dual_ref_operators(&test_vec) && valid_single_operators(&test_vec);
 }
 
 pub fn valid_dual_ref_operators(rule: &Vec<&Token>) -> bool {
@@ -605,4 +567,14 @@ pub fn valid_dual_ref_operators(rule: &Vec<&Token>) -> bool {
         }
     }
 operators_test.len() == 0
+}
+
+pub fn create_trees(definitions: Vec<String>) -> Vec<(String, Rule)> {   
+    let mut trees: Vec<(String, Rule)> = Vec::new();
+    let name_def_pairs = split_members(definitions);
+    for def in name_def_pairs {
+        let r = tokenize_rule_from_str(def.1);
+        trees.push((def.0, create_definition_tree(&r)));
+    }
+    trees
 }
