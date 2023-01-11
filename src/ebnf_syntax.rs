@@ -1,5 +1,6 @@
 use std::rc::{Rc, Weak};
 
+#[derive(Debug)]
 pub enum Operator {
     Alternation,
     Concatenation,
@@ -12,6 +13,7 @@ pub enum Operator {
     GroupingR,
 }
 
+#[derive(Debug)]
 pub enum Rule {
     Literal(String),
     Identifier(String),
@@ -36,10 +38,31 @@ pub enum Rule {
     GrpRef(Weak<Rule>),
 }
 
+#[derive(Debug)]
 pub enum Token {
     Op(Operator),
     Rl(Rc<Rule>),
     Invalid,
+}
+
+impl Token {
+    pub fn show(&self) {
+        match self {
+            Token::Op(op) => match op {
+                Operator::Alternation => print!(" | "),
+                Operator::Concatenation => print!(" , "),
+                Operator::Exception => print!(" - "),
+                Operator::OptionalL => print!(" [ "),
+                Operator::OptionalR => print!(" ] "),
+                Operator::RepetitionL => print!(" {{ "),
+                Operator::RepetitionR => print!(" }} "),
+                Operator::GroupingL => print!(" ( "),
+                Operator::GroupingR => print!(" ) "),
+            },
+            Token::Rl(rl) => rl.show(0),
+            Token::Invalid => print!("INVALID"),
+        }
+    }
 }
 
 fn println_shift(txt: &str, shift: u8) {
@@ -122,7 +145,7 @@ impl Rule {
                     sub_2.show(shift+3);
                     println!();
                     for _ in 1..3 {
-                        println_shift("+\n", shift+3);
+                        println_shift("+", shift+3);
                     }
                     println_shift("/NO REFERENCE\\", shift+1);
                 },
@@ -133,7 +156,7 @@ impl Rule {
                     s2.show(shift+3);
                     println!();
                     for _ in 1..3 {
-                        println_shift("+\n", shift+3);
+                        println_shift("+", shift+3);
                     }
                     for _ in 1..shift+1 {
                         print!("  ");
@@ -143,7 +166,7 @@ impl Rule {
                 None => {
                     println!("| * * * /NO REFERENCE\\");
                     for _ in 1..3 {
-                        println_shift("+\n", shift+3);
+                        println_shift("+", shift+3);
                     }
                     for _ in 1..shift+1 {
                         print!("  ");
@@ -157,7 +180,7 @@ impl Rule {
                     s2.show(shift+3);
                     println!();
                     for _ in 1..3 {
-                        println_shift("+\n", shift+3);
+                        println_shift("+", shift+3);
                     }
                     for _ in 1..shift+1 {
                         print!("  ");
@@ -167,7 +190,7 @@ impl Rule {
                 None => {
                     println!(", * * * /NO REFERENCE\\");
                     for _ in 1..3 {
-                        println_shift("+\n", shift+3);
+                        println_shift("+", shift+3);
                     }
                     for _ in 1..shift+1 {
                         print!("  ");
@@ -181,7 +204,7 @@ impl Rule {
                     s2.show(shift+3);
                     println!();
                     for _ in 1..3 {
-                        println_shift("+\n", shift+3);
+                        println_shift("+", shift+3);
                     }
                     for _ in 1..shift+1 {
                         print!("  ");
@@ -191,7 +214,7 @@ impl Rule {
                 None => {
                     println!("- * * * /NO REFERENCE\\");
                     for _ in 1..3 {
-                        println_shift("+\n", shift+3);
+                        println_shift("+", shift+3);
                     }
                     for _ in 1..shift+1 {
                         print!("  ");
@@ -374,7 +397,7 @@ impl Rule {
                     sub_2.show(shift+4);
                     println!();
                     for _ in 1..3 {
-                        println_shift("+\n", shift+3);
+                        println_shift("+", shift+3);
                     }
                     for _ in 1..shift+1 {
                         print!("  ");
@@ -398,7 +421,7 @@ impl Rule {
                     sub_2.show(shift+4);
                     println!();
                     for _ in 1..3 {
-                        println_shift("+\n", shift+3);
+                        println_shift("+", shift+3);
                     }
                     for _ in 1..shift+1 {
                         print!("  ");
