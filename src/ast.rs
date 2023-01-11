@@ -260,12 +260,8 @@ pub fn copy_rule_tree(rule: Rc<Rule>) -> Rule {
 pub fn create_rule_tree<'a>(rule: &'a Vec<Token>) -> Rule {
     let rule_as_ref = tokens_as_ref(rule);
     let rule_with_prior_brackets = with_priority_parentheses(rule_as_ref);
-    for tk in rule_with_prior_brackets.iter() {
-        tk.show();
-    }
     println!();
     let res = create_rule_tree_by_ref(rule_with_prior_brackets);
-    println!("\n{res:?}");
     res
 }
 
