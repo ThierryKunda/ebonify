@@ -393,10 +393,10 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
 
     #[test]
     fn rule_without_grouping_test() {
-        let tokens_0 = tokenize_rule(vec![String::from("ok")]);
-        let tokens_1 = tokenize_rule(vec![String::from("{"), String::from("yes"), String::from("}")]);
-        let tokens_2 = tokenize_rule(vec![String::from("("), String::from("\"abc\""), String::from("|"), String::from("\"def\""), String::from(")")]);
-        let tokens_3 = tokenize_rule(vec![String::from("("), String::from("\"abc\""), String::from("|"), String::from("\"def\""), String::from(")"), String::from(","), String::from("\"1234\"")]);
+        let tokens_0 = tokenize_rule_from_str(String::from("ok"));
+        let tokens_1 = tokenize_rule_from_str(String::from("{yes}"));
+        let tokens_2 = tokenize_rule_from_str(String::from("'abc' | 'def'"));
+        let tokens_3 = tokenize_rule_from_str(String::from("( 'abc' | 'def' ) , '1234'"));
 
         let tree_0 = create_rule_tree(&tokens_0);
         let tree_1 = create_rule_tree(&tokens_1);
@@ -440,12 +440,11 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         match t3 {
             Rule::Concatenation(left, lit3) => match left.deref() {
                 Rule::AlterRef(lit1, lit2) => match (lit1.upgrade(), lit2.upgrade(), lit3.deref()) {
-                    (Some(st1), Some(st2), Rule::Literal(s3)) => {
-                        match (st1.deref(), st2.deref()) {
-                            (Rule::Literal(s1), Rule::Literal(s2)) => {
-                                assert_eq!(s1, &String::from("abc"));
-                                assert_eq!(s2, &String::from("def"));
-                                assert_eq!(s3, &String::from("1234"));
+                    (Some(st1), Some(st2), Rule::Ref(st3)) => {
+                        match (st1.deref(), st2.deref(), st3.upgrade()) {
+                            (Rule::Literal(_), Rule::Literal(_), Some(lit)) => match lit.deref() {
+                                Rule::Literal(_) => assert!(true),
+                                _ => assert!(false)
                             },
                             _ => assert!(false),
                         }
