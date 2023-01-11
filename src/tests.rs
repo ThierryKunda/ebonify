@@ -270,12 +270,12 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
     
     #[test]
     fn create_rule_tree_test() {
-        let tokens_0 = tokenize_rule(vec![String::from("ok")]);
-        let tokens_1 = tokenize_rule(vec![String::from("{"), String::from("yes"), String::from("}")]);
-        let tokens_2 = tokenize_rule(vec![String::from("\"abc\""), String::from("|"), String::from("\"efg\"")]);
-        let tokens_3 = tokenize_rule(vec![String::from("["), String::from("function"), String::from("|"), String::from("method"), String::from("]")]);
-        let tokens_4 = tokenize_rule(vec![String::from("("), String::from("foo"), String::from("|"), String::from("bar"), String::from(")"), String::from("-"), String::from("var")]);
-        let tokens_5 = tokenize_rule(vec![String::from("\"a\""), String::from("|"), String::from("\"b\""), String::from("|"), String::from("\"c\"")]);
+        let tokens_0 = tokenize_rule_from_str(String::from("ok"));
+        let tokens_1 = tokenize_rule_from_str(String::from("{ yes }"));
+        let tokens_2 = tokenize_rule_from_str(String::from("'abc' | 'efg'"));
+        let tokens_3 = tokenize_rule_from_str(String::from("[ function | method ]"));
+        let tokens_4 = tokenize_rule_from_str(String::from("(foo|bar)-var"));
+        let tokens_5 = tokenize_rule_from_str(String::from("'a' | 'b' | 'c'"));
 
         let tree_0 = create_rule_tree(&tokens_0);
         let tree_1 = create_rule_tree(&tokens_1);
@@ -321,10 +321,13 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         }
 
         match tree_4 {
-            Rule::Grouping(el) => match el .deref(){
-                Rule::Exception(left, other) => match (left.deref(), other.deref()) {
-                    (Rule::Grouping(ids), Rule::Identifier(_)) => match ids.deref() {
-                        Rule::AlterRef(_, _) => assert!(true),
+            Rule::Exception(a, b) => match (a.deref(), b.deref()) {
+                (Rule::Grouping(c), Rule::GrpRef(d)) => match (c.deref(), d.upgrade()) {
+                    (Rule::AlterRef(e, f), d) => match (e.upgrade(), f.upgrade(), d) {
+                        (Some(g), Some(h), Some(i)) => match (g.deref(), h.deref(), i.deref()) {
+                            (Rule::Identifier(_), Rule::Identifier(_), Rule::Identifier(_)) => assert!(true),
+                            _ => assert!(false)
+                        },
                         _ => assert!(false),
                     },
                     _ => assert!(false),
