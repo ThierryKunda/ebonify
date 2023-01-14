@@ -93,10 +93,12 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         let tokens_1: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("}")]);
         let tokens_2: Vec<Token> = tokenize_rule(vec![String::from("]"), String::from("[")]);
         let tokens_3: Vec<Token> = tokenize_rule(vec![String::from("("), String::from("["), String::from(")")]);
+        let tokens_4: Vec<Token> = tokenize_rule(vec![String::from("{"), String::from("("), String::from(")"), String::from("}")]);
 
         let tokens_ref_1: Vec<&Token> = tokens_1.iter().collect();
         let tokens_ref_2: Vec<&Token> = tokens_2.iter().collect();
         let tokens_ref_3: Vec<&Token> = tokens_3.iter().collect();
+        let tokens_ref_4: Vec<&Token> = tokens_4.iter().collect();
     
         assert!(valid_dual_operators(&tokens_0));
         assert!(valid_dual_operators(&tokens_1));
@@ -105,6 +107,7 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         assert!(valid_dual_ref_operators(&tokens_ref_1));
         assert!(!valid_dual_ref_operators(&tokens_ref_2));
         assert!(!valid_dual_ref_operators(&tokens_ref_3));
+        assert!(valid_dual_ref_operators(&tokens_ref_4));
     }
 
     #[test]
