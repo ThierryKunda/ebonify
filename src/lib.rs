@@ -4,4 +4,4 @@ mod ebnf_syntax;
 mod ast;
 #[cfg(test)]
 mod tests;
-mod structure;
+// mod structure;
