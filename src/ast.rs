@@ -127,7 +127,6 @@ pub fn are_same_tree<'a>(rule_1: &'a Rule, rule_2: &'a Rule) -> bool {
 
 pub fn create_definition_tree<'a>(rule: &'a Vec<Token>) -> Rc<Rule> {
     let rule_tree = create_rule_tree(rule);
-    // println!("With grouping : {rule_tree:?}");
     tree_without_grouping(Rc::new(rule_tree))
 }
 
