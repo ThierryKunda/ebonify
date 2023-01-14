@@ -95,7 +95,6 @@ pub fn tokenize_file(file: &str) -> Vec<Vec<Token>> {
             let res = v
             .into_iter()
             .map(|el| tokenize_rule_from_str(el)).collect();
-            print!("{:?}", res);
             res
         },
         Err(_) => vec![vec![Token::Invalid]],
@@ -174,7 +173,7 @@ operators_test.len() == 0
 
 pub fn valid_single_operators(rule: &Vec<&Token>) -> bool {
     match (rule.first(), rule.last()) {
-        (None, None) => todo!(),
+        (None, None) => return true,
         (Some(first), Some(last)) => match (first, last) {
             (Token::Op(a), Token::Op(b)) => match (a,b) {
                 (Operator::Alternation, _) => return false,
