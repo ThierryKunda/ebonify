@@ -528,10 +528,7 @@ pub fn least_prior_is_unary(rule: &Vec<&Token>) -> bool {
     for i in 1..rule.len()-1 {
         test_vec.push(rule.get(i).unwrap());
     }
-    let a = valid_dual_ref_operators(&test_vec);
-    let b = valid_single_operators(&test_vec);
-    println!("{} {}", a, b);
-    return a && b;
+    return valid_dual_ref_operators(&test_vec) && valid_single_operators(&test_vec);
 }
 
 pub fn valid_dual_ref_operators(rule: &Vec<&Token>) -> bool {
@@ -555,24 +552,26 @@ pub fn valid_dual_ref_operators(rule: &Vec<&Token>) -> bool {
         Some(v) => operators_test.push(v),
         None => return true,
     }
+    let mut current_op: Option<&&Operator>;
+    let mut last_test_op: Option<&&Operator>;
     let size = operators_list.len();
     for i in 1..size {
-        let current_op = operators_list.get(i);
-        let last_test_op = operators_test.last();
+        current_op = operators_list.get(i);
+        last_test_op = operators_test.last();
         match (last_test_op, current_op) {
             (Some(op1), Some(op2)) => {
                 if brackets_paired(op1, op2) {
                     operators_test.pop();
                 } else {
-                    let o = *op1;
+                    let o = *op2;
                     operators_test.push(o);
                 }
             },
-            (Some(op1), None) => {
-                let o = *op1;
+            (None, Some(op2)) => {
+                let o = *op2;
                 operators_test.push(o)
             },
-            (None, _) => return operators_test.len() == 0,
+            (_, None) => return operators_test.len() == 0,
         }
     }
 operators_test.len() == 0
