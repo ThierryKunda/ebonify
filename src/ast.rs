@@ -268,7 +268,6 @@ pub fn copy_rule_tree(rule: Rc<Rule>) -> Rule {
 
 pub fn create_rule_tree<'a>(rule: &'a Vec<Token>) -> Rule {
     let rule_as_ref = tokens_as_ref(rule);
-    println!("{:?}\n", rule);
     let rule_with_prior_brackets = with_priority_parentheses(rule_as_ref);
     let res = create_rule_tree_by_ref(rule_with_prior_brackets);
     res
@@ -587,7 +586,6 @@ pub fn create_trees(definitions: Vec<String>) -> Vec<(String, Rc<Rule>)> {
     for def in name_def_pairs {
         let r = tokenize_rule_from_str(def.1);
         let t = create_definition_tree(&r);
-        println!("{} : {:?}\n\n", def.0, t);
         trees.push((def.0, t));
     }
     trees
