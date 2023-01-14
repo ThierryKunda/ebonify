@@ -374,7 +374,12 @@ pub fn with_priority_parentheses<'a>(rule: Vec<&'a Token>) -> Vec<&'a Token> {
                         )
                     },
                     _ => vec![&Token::Invalid]
-            }
+            },
+            // < a > . b -> < a > . b 
+            // OR
+            // a . < b > -> a . < b >
+            (Token::Op(_), Token::Op(_), Token::Rl(_)) |
+            (Token::Rl(_), Token::Op(_), Token::Op(_)) => rule,
             _ => vec![&Token::Invalid]
         }
     } else {
