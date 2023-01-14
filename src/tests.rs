@@ -407,13 +407,14 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         let t1 = tree_without_grouping(Rc::new(tree_1));
         let t2 = tree_without_grouping(Rc::new(tree_2));
         let t3 = tree_without_grouping(Rc::new(tree_3));
+        println!("{:?}", t3);
         
-        match t0 {
-            Rule::Identifier(id) => assert_eq!(id, String::from("ok")),
+        match t0.deref() {
+            Rule::Identifier(id) => assert_eq!(id, &String::from("ok")),
             _ => assert!(false), 
         }
 
-        match t1 {
+        match t1.deref() {
             Rule::RepetRef(id) => match id.upgrade() {
                 Some(el) => match el.deref() {
                     Rule::Identifier(s) => assert_eq!(s, &String::from("yes")),
@@ -423,7 +424,7 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
             },
             _ => assert!(false),
         }
-        match t2 {
+        match t2.deref() {
             Rule::AlterRef(left, right) => match (left.upgrade(), right.upgrade()) {
                 (Some(l), Some(r)) => match (l.deref(), r.deref()) {
                     (Rule::Literal(lit1), Rule::Literal(lit2)) => {
@@ -437,23 +438,20 @@ use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
             _ => assert!(false),
         }
 
-        match t3 {
-            Rule::Concatenation(left, lit3) => match left.deref() {
-                Rule::AlterRef(lit1, lit2) => match (lit1.upgrade(), lit2.upgrade(), lit3.deref()) {
-                    (Some(st1), Some(st2), Rule::Ref(st3)) => {
-                        match (st1.deref(), st2.deref(), st3.upgrade()) {
-                            (Rule::Literal(_), Rule::Literal(_), Some(lit)) => match lit.deref() {
-                                Rule::Literal(_) => assert!(true),
-                                _ => assert!(false)
-                            },
-                            _ => assert!(false),
-                        }
+        match t3.deref() {
+            Rule::Concatenation(left, lit3) => match (left.deref(), lit3.deref()) {
+                (Rule::AlterRef(a, b), Rule::Literal(s3)) => match (a.upgrade(), b.upgrade()) {
+                    (Some(left), Some(right)) => match (left.deref(), right.deref()) {
+                        (Rule::Literal(s1), Rule::Literal(s2)) => assert_eq!(
+                            (s1, s2, s3),
+                            (&String::from("abc"), &String::from("def"), &String::from("1234"))),
+                        _ => assert!(false)
                     },
                     _ => assert!(false),
-                }
+                },
                 _ => assert!(false),
             },
-            _ => assert!(false),    
+            _ => assert!(false),
         }
     }
 
