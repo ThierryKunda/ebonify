@@ -1,6 +1,6 @@
 use std::{ops::Deref, rc::Rc};
 
-use crate::{pre_teatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
+use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
 
 #[test]
     fn split_lines_from_file_test() {

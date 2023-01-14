@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use std::ops::Deref;
 
-use crate::{ebnf_syntax::*, pre_teatment::{brackets_paired, tokenize_rule_from_str, split_members, is_binary, valid_single_operators}};
+use crate::{ebnf_syntax::*, pre_treatment::{brackets_paired, tokenize_rule_from_str, split_members, is_binary, valid_single_operators}};
 
 
 pub fn are_same_tree<'a>(rule_1: &'a Rule, rule_2: &'a Rule) -> bool {

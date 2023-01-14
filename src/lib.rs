@@ -1,6 +1,7 @@
 mod error;
-mod pre_teatment;
+mod pre_treatment;
 mod ebnf_syntax;
 mod ast;
 #[cfg(test)]
 mod tests;
+mod structure;
