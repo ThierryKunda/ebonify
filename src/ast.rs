@@ -418,7 +418,7 @@ pub fn tree_without_grouping(rule: Rc<Rule>) -> Rc<Rule> {
     match rule.deref() {
         Rule::Literal(_) | Rule::Identifier(_) | Rule::Ref(_) 
         | Rule::AlterRef(_, _) | Rule::ConcatRef(_, _) | Rule::ExceptRef(_, _)
-        | Rule::RepetRef(_) | Rule::OptRef(_) => Rc::new(copy_rule_tree(rule)),
+        | Rule::RepetRef(_) | Rule::OptRef(_) => Rc::clone(&rule),
         Rule::GrpRef(sub_tree) => match sub_tree.upgrade() {
             Some(el) => Rc::clone(&el),
             None => Rc::new(Rule::Identifier("Invalid".to_string())),
