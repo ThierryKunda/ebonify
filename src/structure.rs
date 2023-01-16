@@ -43,8 +43,8 @@ impl EbnfTree {
     }
 }
 
-impl From<Vec<(String, Rc<Rule>)>> for EbnfTree {
-    fn from(rulename_definition_pairs: Vec<(String, Rc<Rule>)>) -> Self {
+impl From<&Vec<(String, Rc<Rule>)>> for EbnfTree {
+    fn from(rulename_definition_pairs: &Vec<(String, Rc<Rule>)>) -> Self {
         let mut pairs: BTreeMap<String, Rc<Rule>> = BTreeMap::new();
         for (rule_name, definition) in rulename_definition_pairs {
             pairs.insert(rule_name.to_string(), definition);
