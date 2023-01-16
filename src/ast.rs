@@ -3,6 +3,290 @@ use std::ops::Deref;
 
 use crate::{ebnf_syntax::*, pre_treatment::{brackets_paired, tokenize_rule_from_str, split_members, is_binary, valid_single_operators}};
 
+pub fn get_pure_tree(rule: Rc<Rule>) -> Rc<Rule> {
+    match rule.deref() {
+        Rule::Literal(lit) => Rc::new(Rule::Literal(lit.to_string())),
+        Rule::Identifier(id) => Rc::new(Rule::Identifier(id.to_string())),
+        Rule::AlterRef(left, right) => match (left.upgrade(), right.upgrade()) {
+            (Some(a), Some(b)) => match (a.deref(), b.deref()) {
+                (Rule::Identifier(id1), Rule::Identifier(id2)) => Rc::new(
+                    Rule::Alternation(
+                        Rc::new(Rule::Identifier(id1.to_string())),
+                        Rc::new(Rule::Identifier(id2.to_string()))
+                    )
+                ),
+                (Rule::Identifier(id1), Rule::Literal(lit2)) => Rc::new(
+                    Rule::Alternation(
+                        Rc::new(Rule::Identifier(id1.to_string())),
+                        Rc::new(Rule::Literal(lit2.to_string()))
+                    )
+                ),
+                (Rule::Literal(lit1), Rule::Literal(lit2)) => Rc::new(
+                    Rule::Alternation(
+                        Rc::new(Rule::Identifier(lit1.to_string())),
+                        Rc::new(Rule::Literal(lit2.to_string()))
+                    )
+                ),
+                (Rule::Literal(id1), Rule::Identifier(lit2)) => Rc::new(
+                    Rule::Alternation(
+                        Rc::new(Rule::Identifier(id1.to_string())),
+                        Rc::new(Rule::Literal(lit2.to_string()))
+                    )
+                ),
+                _ => rule
+            },
+            (None, Some(b)) => match b.deref() {
+                Rule::Literal(lit) => Rc::new(
+                    Rule::AlterRefL(
+                        left.to_owned(),
+                        Rc::new(Rule::Literal(lit.to_string()))
+                    )
+                ),
+                Rule::Identifier(id) => Rc::new(
+                    Rule::AlterRefL(
+                        left.to_owned(),
+                        Rc::new(Rule::Identifier(id.to_string()))
+                    )
+                ),
+                _ => rule
+                
+            },
+            (Some(a), None) => match a.deref() {
+                Rule::Literal(lit) => Rc::new(
+                    Rule::AlterRefR(
+                        Rc::new(Rule::Literal(lit.to_string())),
+                        right.to_owned()
+                    )
+                ),
+                Rule::Identifier(id) => Rc::new(
+                    Rule::AlterRefR(
+                        Rc::new(Rule::Identifier(id.to_string())),
+                        right.to_owned()
+                    )
+                ),
+                _ => rule
+                
+            },
+            (None, None) => rule,
+            
+        },
+        Rule::ConcatRef(left, right) => match (left.upgrade(), right.upgrade()) {
+            (Some(a), Some(b)) => match (a.deref(), b.deref()) {
+                (Rule::Identifier(id1), Rule::Identifier(id2)) => Rc::new(
+                    Rule::Concatenation(
+                        Rc::new(Rule::Identifier(id1.to_string())),
+                        Rc::new(Rule::Identifier(id2.to_string()))
+                    )
+                ),
+                (Rule::Identifier(id1), Rule::Literal(lit2)) => Rc::new(
+                    Rule::Concatenation(
+                        Rc::new(Rule::Identifier(id1.to_string())),
+                        Rc::new(Rule::Literal(lit2.to_string()))
+                    )
+                ),
+                (Rule::Literal(lit1), Rule::Literal(lit2)) => Rc::new(
+                    Rule::Concatenation(
+                        Rc::new(Rule::Identifier(lit1.to_string())),
+                        Rc::new(Rule::Literal(lit2.to_string()))
+                    )
+                ),
+                (Rule::Literal(id1), Rule::Identifier(lit2)) => Rc::new(
+                    Rule::Concatenation(
+                        Rc::new(Rule::Identifier(id1.to_string())),
+                        Rc::new(Rule::Literal(lit2.to_string()))
+                    )
+                ),
+                _ => rule
+            },
+            (None, Some(b)) => match b.deref() {
+                Rule::Literal(lit) => Rc::new(
+                    Rule::ConcatRefL(
+                        left.to_owned(),
+                        Rc::new(Rule::Literal(lit.to_string()))
+                    )
+                ),
+                Rule::Identifier(id) => Rc::new(
+                    Rule::ConcatRefL(
+                        left.to_owned(),
+                        Rc::new(Rule::Identifier(id.to_string()))
+                    )
+                ),
+                _ => rule
+                
+            },
+            (Some(a), None) => match a.deref() {
+                Rule::Literal(lit) => Rc::new(
+                    Rule::ConcatRefR(
+                        Rc::new(Rule::Literal(lit.to_string())),
+                        right.to_owned()
+                    )
+                ),
+                Rule::Identifier(id) => Rc::new(
+                    Rule::ConcatRefR(
+                        Rc::new(Rule::Identifier(id.to_string())),
+                        right.to_owned()
+                    )
+                ),
+                _ => rule
+                
+            },
+            (None, None) => rule,
+            
+        },
+        Rule::ExceptRef(left, right) => match (left.upgrade(), right.upgrade()) {
+            (Some(a), Some(b)) => match (a.deref(), b.deref()) {
+                (Rule::Identifier(id1), Rule::Identifier(id2)) => Rc::new(
+                    Rule::Exception(
+                        Rc::new(Rule::Identifier(id1.to_string())),
+                        Rc::new(Rule::Identifier(id2.to_string()))
+                    )
+                ),
+                (Rule::Identifier(id1), Rule::Literal(lit2)) => Rc::new(
+                    Rule::Exception(
+                        Rc::new(Rule::Identifier(id1.to_string())),
+                        Rc::new(Rule::Literal(lit2.to_string()))
+                    )
+                ),
+                (Rule::Literal(lit1), Rule::Literal(lit2)) => Rc::new(
+                    Rule::Exception(
+                        Rc::new(Rule::Identifier(lit1.to_string())),
+                        Rc::new(Rule::Literal(lit2.to_string()))
+                    )
+                ),
+                (Rule::Literal(id1), Rule::Identifier(lit2)) => Rc::new(
+                    Rule::Exception(
+                        Rc::new(Rule::Identifier(id1.to_string())),
+                        Rc::new(Rule::Literal(lit2.to_string()))
+                    )
+                ),
+                _ => rule
+            },
+            (None, Some(b)) => match b.deref() {
+                Rule::Literal(lit) => Rc::new(
+                    Rule::ExceptRefL(
+                        left.to_owned(),
+                        Rc::new(Rule::Literal(lit.to_string()))
+                    )
+                ),
+                Rule::Identifier(id) => Rc::new(
+                    Rule::ExceptRefL(
+                        left.to_owned(),
+                        Rc::new(Rule::Identifier(id.to_string()))
+                    )
+                ),
+                _ => rule
+                
+            },
+            (Some(a), None) => match a.deref() {
+                Rule::Literal(lit) => Rc::new(
+                    Rule::ExceptRefR(
+                        Rc::new(Rule::Literal(lit.to_string())),
+                        right.to_owned()
+                    )
+                ),
+                Rule::Identifier(id) => Rc::new(
+                    Rule::ExceptRefR(
+                        Rc::new(Rule::Identifier(id.to_string())),
+                        right.to_owned()
+                    )
+                ),
+                _ => rule
+                
+            },
+            (None, None) => rule,
+            
+        },
+        Rule::RepetRef(sub) => match sub.deref().upgrade() {
+            Some(st) => match st.deref() {
+                Rule::Literal(lit) => Rc::new(
+                    Rule::Repetition(
+                        Rc::new(Rule::Literal(lit.to_string()))
+                    ),
+                ),
+                Rule::Identifier(lit) => Rc::new(
+                    Rule::Repetition(
+                        Rc::new(Rule::Identifier(lit.to_string()))
+                    ),
+                ),
+                
+                _ => rule,
+            }
+            _ => rule
+        },
+        Rule::GrpRef(sub) => match sub.deref().upgrade() {
+            Some(st) => match st.deref() {
+                Rule::Literal(lit) => Rc::new(
+                    Rule::Grouping(
+                        Rc::new(Rule::Literal(lit.to_string()))
+                    ),
+                ),
+                Rule::Identifier(lit) => Rc::new(
+                    Rule::Grouping(
+                        Rc::new(Rule::Identifier(lit.to_string()))
+                    ),
+                ),
+                
+                _ => rule,
+            }
+            _ => rule
+        },
+        Rule::OptRef(sub) => match sub.deref().upgrade() {
+            Some(st) => match st.deref() {
+                Rule::Literal(lit) => Rc::new(
+                    Rule::Optional(
+                        Rc::new(Rule::Literal(lit.to_string()))
+                    ),
+                ),
+                Rule::Identifier(lit) => Rc::new(
+                    Rule::Optional(
+                        Rc::new(Rule::Identifier(lit.to_string()))
+                    ),
+                ),
+                
+                _ => rule,
+            }
+            _ => rule
+        },
+        Rule::AlterRefL(_, _) | Rule::AlterRefR(_, _) |
+        Rule::ConcatRefL(_, _) | Rule::ConcatRefR(_, _) |
+        Rule::ExceptRefL(_, _) | Rule::ExceptRefR(_, _) | 
+        Rule::Ref(_) => rule,
+        Rule::Alternation(left, right) => Rc::new(
+            Rule::Alternation(
+                get_pure_tree(Rc::clone(left)),
+                get_pure_tree(Rc::clone(right)),
+            )
+        ),
+        Rule::Concatenation(left, right) => Rc::new(
+            Rule::Concatenation(
+                get_pure_tree(Rc::clone(left)),
+                get_pure_tree(Rc::clone(right)),
+            )
+        ),
+        Rule::Exception(left, right) => Rc::new(
+            Rule::Exception(
+                get_pure_tree(Rc::clone(left)),
+                get_pure_tree(Rc::clone(right)),
+            )
+        ),
+        Rule::Repetition(sub) => Rc::new(
+            Rule::Repetition(
+                get_pure_tree(Rc::clone(sub))
+            )
+        ),
+        Rule::Grouping(sub) => Rc::new(
+            Rule::Grouping(
+                get_pure_tree(Rc::clone(sub))
+            )
+        ),
+        Rule::Optional(sub) => Rc::new(
+            Rule::Optional(
+                get_pure_tree(Rc::clone(sub))
+            )
+        ),
+        
+    }
+}
 
 pub fn are_same_tree<'a>(rule_1: &'a Rule, rule_2: &'a Rule) -> bool {
     match (rule_1, rule_2) {

@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fs;
 
-use crate::ast::{create_definition_tree, tokens_as_ref};
+use crate::ast::{create_definition_tree, get_pure_tree};
 use crate::error::PreTreatmentError;
 use crate::pre_treatment::{split_members, split_lines, tokenize_rule_from_str, split_lines_from_file};
 use crate::ebnf_syntax::*;
@@ -33,11 +33,10 @@ impl EbnfTree {
                     // Removal of the semi-colon at the end of a definition
                     definition.pop();
                     let tokens = tokenize_rule_from_str(definition);
-                    pairs.push((rule_name, create_definition_tree(&tokens)));
+                    let def = create_definition_tree(&tokens);
+                    pairs.push((rule_name, get_pure_tree(def)));
                 }
-                Ok(
-                    EbnfTree::from(pairs)
-                )
+                Ok(EbnfTree::from(&pairs))
             },
             Err(_) => Err(PreTreatmentError),
         }
