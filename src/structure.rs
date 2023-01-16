@@ -1,5 +1,4 @@
-use std::error::Error;
-use std::fs;
+use std::ops::Deref;
 
 use crate::ast::{create_definition_tree, get_pure_tree};
 use crate::error::PreTreatmentError;
