@@ -1,5 +1,6 @@
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 use std::ops::Deref;
+
 
 use crate::{ebnf_syntax::*, pre_treatment::{brackets_paired, tokenize_rule_from_str, split_members, is_binary, valid_single_operators}};
 
@@ -23,7 +24,7 @@ pub fn get_pure_tree(rule: Rc<Rule>) -> Rc<Rule> {
                 ),
                 (Rule::Literal(lit1), Rule::Literal(lit2)) => Rc::new(
                     Rule::Alternation(
-                        Rc::new(Rule::Identifier(lit1.to_string())),
+                        Rc::new(Rule::Literal(lit1.to_string())),
                         Rc::new(Rule::Literal(lit2.to_string()))
                     )
                 ),
