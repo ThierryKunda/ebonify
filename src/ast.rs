@@ -479,6 +479,51 @@ pub fn tree_without_grouping(rule: Rc<Rule>) -> Rc<Rule> {
     }
 }
 
+pub fn predicate_single_result<PA, PR, VS, VD>(rule: &Rc<Rule>, pred_atomic: &PA, pred_ref: &PR, op_on_single_truthness: &VS, op_on_dual_truthness: &VD) -> bool
+    where
+        PA: Fn(&Rule) -> bool,
+        PR: Fn(&Weak<Rule>) -> bool,
+        VS: Fn(&Rule, bool) -> bool,
+        VD: Fn(&Rule, bool, bool) -> bool {
+    match rule.deref() {
+        Rule::Literal(_) |
+        Rule::Identifier(_) => pred_atomic(rule.deref()),
+        Rule::Alternation(left, right) |
+        Rule::Concatenation(left, right) |
+        Rule::Exception(left, right)
+        => op_on_dual_truthness(
+            rule,
+            predicate_single_result(left, pred_atomic, pred_ref, op_on_single_truthness, op_on_dual_truthness),
+            predicate_single_result(right, pred_atomic, pred_ref, op_on_single_truthness, op_on_dual_truthness)
+        ),
+        Rule::Repetition(sub) |
+        Rule::Grouping(sub) |
+        Rule::Optional(sub) => op_on_single_truthness(rule, predicate_single_result(sub, pred_atomic, pred_ref, op_on_single_truthness, op_on_dual_truthness)),
+        Rule::Ref(r) |
+        Rule::RepetRef(r) |
+        Rule::GrpRef(r) |
+        Rule::OptRef(r)
+        => op_on_single_truthness(rule, pred_ref(r)),
+        Rule::AlterRefL(left, right) |
+        Rule::ConcatRefL(left, right) |
+        Rule::ExceptRefL(left, right) => op_on_dual_truthness(
+            rule,
+            pred_ref(left),
+            predicate_single_result(right, pred_atomic, pred_ref, op_on_single_truthness, op_on_dual_truthness)
+        ),
+        Rule::AlterRefR(left, right) |
+        Rule::ConcatRefR(left, right) |
+        Rule::ExceptRefR(left, right) => op_on_dual_truthness(
+            rule,
+            predicate_single_result(left, pred_atomic, pred_ref, op_on_single_truthness, op_on_dual_truthness),
+            pred_ref(right)
+        ),
+        Rule::ConcatRef(left, right) |
+        Rule::AlterRef(left, right) |
+        Rule::ExceptRef(left, right) => op_on_dual_truthness(rule, pred_ref(left), pred_ref(right)),
+    }
+}
+
 pub fn create_rule_tree<'a>(rule: &'a Vec<Token>) -> Rule {
     let rule_as_ref = tokens_as_ref(rule);
     let rule_with_prior_brackets = with_priority_parentheses(rule_as_ref);

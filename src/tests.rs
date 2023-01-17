@@ -1,6 +1,6 @@
 use std::{ops::Deref, rc::Rc};
 
-use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
+use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::{*, predicate_single_result}};
 
 #[test]
     fn split_lines_from_file_test() {
@@ -485,4 +485,47 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*};
         assert!(are_same_tree(&tree_2, &tree_c));
         assert!(are_same_tree(&tree_3, &tree_d));
 
+    }
+
+    #[test]
+    pub fn predicate_single_result_test() {
+        let tokens = tokenize_rule_from_str(String::from("( 'abc' | 'def' )"));
+        let tree = get_pure_tree(create_definition_tree(&tokens));
+        let pr1 = |v: &Rule, res: bool| -> bool {
+            match v.deref() {
+                Rule::Alternation(_, _) |
+                Rule::AlterRef(_, _) |
+                Rule::AlterRefL(_, _) |
+                Rule::AlterRefR(_, _) => true,
+                _ => res
+            }
+        };
+
+        let pr2 = |v: &Rule, res: bool| -> bool {
+            match v.deref() {
+                Rule::Identifier(_) => false,
+                _ => res
+            }
+        };
+
+        // contains at least one alternation
+        let res_1 = predicate_single_result(
+            &tree,
+            &|_| false,
+            &|_| false,
+            &pr1,
+            &|v, a,b| pr1(v, a) || pr1(v, b)
+
+        );
+        // Doesn't contain any identifier
+        let res_2 = predicate_single_result(
+            &tree,
+            &|v| if let Rule::Identifier(_) = v { false } else { true },
+            &|_| true,
+            &pr2,
+            &|v, a, b| pr2(v, a) && pr2(v, b)
+        );
+
+        assert!(res_1);
+        assert!(res_2);
     }
