@@ -499,3 +499,14 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::{*, pre
         assert!(res_1);
         assert!(res_2);
     }
+
+    #[test]
+    pub fn tree_with_id_ref_test() {
+        let name = "integer".to_string();
+        let tree_from = get_pure_tree(create_definition_tree(&tokenize_rule_from_str("0|1|2".to_string())));
+        let tree = get_pure_tree(create_definition_tree(&tokenize_rule_from_str(String::from("integer,'.',integer"))));
+        let ref_to = Rc::new(Rule::Ref(Rc::downgrade(&tree_from)));
+        let tree_res = tree_with_id_ref((&name, &tree_from), &tree);
+        let tree_expected = Rc::new(Rule::Concatenation(Rc::clone(&ref_to), Rc::new(Rule::Concatenation(Rc::new(Rule::Literal(".".to_string())), Rc::clone(&ref_to)))));
+        assert!(are_same_tree(&tree_res, &tree_expected));
+    }

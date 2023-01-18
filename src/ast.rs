@@ -4,6 +4,38 @@ use std::ops::Deref;
 
 use crate::{ebnf_syntax::*, pre_treatment::{brackets_paired, tokenize_rule_from_str, split_members, is_binary, valid_single_operators}};
 
+pub fn tree_with_id_ref(name_def_pair: (&String, &Rc<Rule>), rule_to_transform: &Rc<Rule>) -> Rc<Rule> {
+    match rule_to_transform.deref() {
+        Rule::Identifier(id) => if id == name_def_pair.0 {
+            Rc::new(Rule::Ref(Rc::downgrade(name_def_pair.1)))
+        } else {
+            Rc::clone(rule_to_transform)
+        },
+        Rule::Literal(_) | Rule::Ref(_) => Rc::clone(rule_to_transform),
+        Rule::Alternation(left, right) => Rc::new(Rule::Alternation(
+            tree_with_id_ref(name_def_pair, left),
+            tree_with_id_ref(name_def_pair, right)
+        )),
+        Rule::Concatenation(left, right) => Rc::new(Rule::Concatenation(
+            tree_with_id_ref(name_def_pair, left),
+            tree_with_id_ref(name_def_pair, right)
+        )),
+        Rule::Exception(left, right) => Rc::new(Rule::Exception(
+            tree_with_id_ref(name_def_pair, left),
+            tree_with_id_ref(name_def_pair, right)
+        )),
+        Rule::Repetition(sub) => Rc::new(Rule::Repetition(
+            tree_with_id_ref(name_def_pair, sub)
+        )),
+        Rule::Grouping(sub) => Rc::new(Rule::Grouping(
+            tree_with_id_ref(name_def_pair, sub)
+        )),
+        Rule::Optional(sub) => Rc::new(Rule::Optional(
+            tree_with_id_ref(name_def_pair, sub)
+        )),
+    }
+}
+
 pub fn get_pure_tree(rule: Rc<Rule>) -> Rc<Rule> {
     match rule.deref() {
         Rule::Literal(lit) => Rc::new(Rule::Literal(lit.to_string())),
