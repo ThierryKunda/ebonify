@@ -40,6 +40,17 @@ impl EbnfTree {
             Err(_) => Err(PreTreatmentError),
         }
     }
+
+    pub fn add_rule(&mut self, rulename: &String, definition: &Rc<Rule>) {
+        self.rules.insert(rulename.to_string(), Rc::clone(definition));
+        for (_, def) in self.rules.iter_mut() {
+            *def = tree_with_id_ref((rulename, definition), def);
+        }
+    }
+    
+    pub fn update_identified_counts(&mut self) {
+        todo!()
+    }
 }
 
 impl From<&Vec<(String, Rc<Rule>)>> for EbnfTree {
