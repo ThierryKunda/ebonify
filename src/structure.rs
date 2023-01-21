@@ -51,7 +51,24 @@ impl EbnfTree {
     }
     
     pub fn update_identified_counts(&mut self) {
-        todo!()
+        let check_if_id = |atom: &Rule| {
+            if let Rule::Identifier(id) = atom.deref() {
+                AssocRuleCounter::from(vec![(id.to_string(), 1)])
+            } else {
+                AssocRuleCounter::from(vec![])
+            }
+        };
+        let mut counters_list: Vec<AssocRuleCounter> = Vec::new();
+        for (_, def) in self.rules.iter() {
+            let cnt = counting_single_result(
+                &def, &check_if_id,
+                &|_| AssocRuleCounter::from(vec![]),
+                &|_, cnt| cnt,
+                 &|_, cnt1, cnt2| cnt1 + cnt2
+            );
+            counters_list.push(cnt);
+        }
+        self.identified_counts = counters_list.iter().fold(AssocRuleCounter::new(), |acc, cnt| acc + cnt.clone());
     }
 }
 
