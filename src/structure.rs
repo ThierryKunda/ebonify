@@ -4,6 +4,7 @@ use crate::ast::*;
 use crate::error::PreTreatmentError;
 use crate::pre_treatment::{split_members, split_lines, tokenize_rule_from_str, split_lines_from_file};
 use crate::ebnf_syntax::*;
+use crate::utils::AssocRuleCounter;
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
@@ -11,7 +12,7 @@ pub struct EbnfTree {
     pub syntax_source_name: Option<String>,
     pub nodes_count: u32,
     pub rules: BTreeMap<String, Rc<Rule>>,
-    pub identified_counts: BTreeMap<String, u16>
+    pub identified_counts: AssocRuleCounter,
 }
 
 impl EbnfTree {
@@ -20,7 +21,7 @@ impl EbnfTree {
             syntax_source_name: Some(source_name.to_string()),
             nodes_count: 0,
             rules: BTreeMap::new(),
-            identified_counts: BTreeMap::new()
+            identified_counts: AssocRuleCounter::new()
         }
     }
 
@@ -82,7 +83,7 @@ impl From<&Vec<(String, Rc<Rule>)>> for EbnfTree {
             syntax_source_name: None,
             nodes_count: 0,
             rules: pairs,
-            identified_counts: BTreeMap::new(),
+            identified_counts: AssocRuleCounter::new(),
         }
     }
 }
@@ -103,7 +104,7 @@ impl From<&str> for EbnfTree {
             syntax_source_name: None,
             nodes_count: 0,
             rules: pairs,
-            identified_counts: BTreeMap::new()
+            identified_counts: AssocRuleCounter::new()
         }
     }
 }
