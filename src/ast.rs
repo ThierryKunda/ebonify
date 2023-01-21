@@ -170,6 +170,30 @@ pub fn tree_without_grouping(rule: Rc<Rule>) -> Rc<Rule> {
     }
 }
 
+pub fn counting_single_result<T, Cnt: Counter<T> + Clone, PA, PR, VS, VD>(rule: &Rc<Rule>, count_atomic: &PA, count_ref: &PR, op_on_single_counter: &VS, op_on_two_counters: &VD) -> Cnt
+where
+    PA: Fn(&Rule) -> Cnt,
+    PR: Fn(&Weak<Rule>) -> Cnt,
+    VS: Fn(&Rule, Cnt) -> Cnt,
+    VD: Fn(&Rule, Cnt, Cnt) -> Cnt {
+        match rule.deref() {
+            Rule::Literal(_) |
+            Rule::Identifier(_) => count_atomic(rule.deref()),
+            Rule::Alternation(left, right) |
+            Rule::Concatenation(left, right) |
+            Rule::Exception(left, right)
+            => op_on_two_counters(
+                rule,
+                counting_single_result(left, count_atomic, count_ref, op_on_single_counter, op_on_two_counters),
+                counting_single_result(right, count_atomic, count_ref, op_on_single_counter, op_on_two_counters)
+            ),
+            Rule::Repetition(sub) |
+            Rule::Grouping(sub) |
+            Rule::Optional(sub) => op_on_single_counter(rule, counting_single_result(sub, count_atomic, count_ref, op_on_single_counter, op_on_two_counters)),
+            Rule::Ref(r) => op_on_single_counter(rule, count_ref(r))
+        }
+    }
+
 pub fn predicate_single_result<PA, PR, VS, VD>(rule: &Rc<Rule>, pred_atomic: &PA, pred_ref: &PR, op_on_single_truthness: &VS, op_on_dual_truthness: &VD) -> bool
     where
         PA: Fn(&Rule) -> bool,
