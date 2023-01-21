@@ -3,6 +3,7 @@ mod error;
 mod pre_treatment;
 mod ast;
 mod structure;
+mod utils;
 
 use structure::EbnfTree;
 

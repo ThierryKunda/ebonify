@@ -2,7 +2,7 @@ use std::rc::{Rc, Weak};
 use std::ops::Deref;
 
 
-use crate::{ebnf_syntax::*, pre_treatment::{brackets_paired, tokenize_rule_from_str, split_members, is_binary, valid_single_operators}};
+use crate::{utils::Counter, ebnf_syntax::*, pre_treatment::{brackets_paired, tokenize_rule_from_str, split_members, is_binary, valid_single_operators}};
 
 pub fn tree_with_id_ref(name_def_pair: (&String, &Rc<Rule>), rule_to_transform: &Rc<Rule>) -> Rc<Rule> {
     match rule_to_transform.deref() {

@@ -1,6 +1,6 @@
 use std::{ops::Deref, rc::Rc};
 
-use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::{*, predicate_single_result}};
+use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, utils::AssocRuleCounter};
 
 #[test]
     fn split_lines_from_file_test() {
@@ -498,6 +498,33 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::{*, pre
 
         assert!(res_1);
         assert!(res_2);
+    }
+
+    #[test]
+    pub fn counting_single_result_test() {
+        let tokens = tokenize_rule_from_str(String::from("(ok - abc | 'def' ,  ok)"));
+        let tree = get_pure_tree(create_definition_tree(&tokens));
+
+        let counter = AssocRuleCounter::new();
+        let check_if_id = |atom: &Rule| {
+            if let Rule::Identifier(id) = atom.deref() {
+                AssocRuleCounter::from(vec![(id.to_string(), 1)])
+            } else {
+                AssocRuleCounter::from(vec![])
+            }
+        };
+        let res = counting_single_result(
+            &tree, &check_if_id,
+            &|_| AssocRuleCounter::from(vec![]),
+            &|_, cnt| cnt,
+             &|_, cnt1, cnt2| cnt1 + cnt2
+        );
+        println!("{:?}", res);
+        let expected_res = AssocRuleCounter::from(vec![
+            ("ok".to_string(), 2), 
+            ("abc".to_string(), 1), 
+        ]);
+        assert_eq!(res, expected_res);
     }
 
     #[test]
