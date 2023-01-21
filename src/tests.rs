@@ -504,8 +504,6 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, util
     pub fn counting_single_result_test() {
         let tokens = tokenize_rule_from_str(String::from("(ok - abc | 'def' ,  ok)"));
         let tree = get_pure_tree(create_definition_tree(&tokens));
-
-        let counter = AssocRuleCounter::new();
         let check_if_id = |atom: &Rule| {
             if let Rule::Identifier(id) = atom.deref() {
                 AssocRuleCounter::from(vec![(id.to_string(), 1)])
