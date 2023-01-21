@@ -34,6 +34,58 @@ pub trait Counter<T> {
     }
 }
 
+pub struct RuleCounter {
+    total: usize
+}
+
+impl RuleCounter {
+    pub fn new() -> Self {
+        RuleCounter { total: 0 }
+    }
+}
+
+impl Add for RuleCounter {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self {
+        RuleCounter { total: self.total + rhs.total }
+    }
+}
+
+impl Sub for RuleCounter {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        RuleCounter { total: self.total - rhs.total }
+    }
+}
+
+impl Counter<usize> for RuleCounter {
+    fn total(&self) -> usize {
+        self.total
+    }
+
+    fn has_key_value_association(&self) -> bool {
+        false
+    }
+
+    fn add_one_to_total(&mut self) {
+        self.total += 1;
+    }
+
+    fn remove_one_to_total(&mut self) {
+        if self.total > 0 {
+            self.total -= 1;
+        }
+    }
+
+    fn add_element(&mut self, _element: &usize) {}
+
+    fn remove_element(&mut self, _element: &usize) {}
+
+    fn element_already_stored(&self, _element: &usize) -> Option<bool> { None }
+}
+
 #[derive(Clone, Debug)]
 pub struct AssocRuleCounter {
     total: usize,
