@@ -6,7 +6,7 @@ use crate::pre_treatment::{split_members, split_lines, tokenize_rule_from_str, s
 use crate::ebnf_syntax::*;
 use crate::utils::{AssocRuleCounter, Counter, RuleCounter};
 use std::collections::BTreeMap;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 pub struct EbnfTree {
     pub syntax_source_name: Option<String>,
