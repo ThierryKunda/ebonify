@@ -4,7 +4,7 @@ use crate::ast::*;
 use crate::error::PreTreatmentError;
 use crate::pre_treatment::{split_members, split_lines, tokenize_rule_from_str, split_lines_from_file};
 use crate::ebnf_syntax::*;
-use crate::utils::AssocRuleCounter;
+use crate::utils::{AssocRuleCounter, Counter, RuleCounter};
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
@@ -48,6 +48,42 @@ impl EbnfTree {
         self.rules.insert(rulename.to_string(), Rc::clone(definition));
         for (_, def) in self.rules.iter_mut() {
             *def = tree_with_id_ref((rulename, definition), def);
+        }
+    }
+    pub fn update_definition_nodes_count(&mut self, rulename: &String, counting_ref: bool) {
+        if let Some(def) = self.rules.get(rulename) {
+            let c_atom = |_: &Rule| AssocRuleCounter::from(vec![(rulename.to_string(), 1)]);
+            let c_ref = |_: &Weak<Rule>| if counting_ref { AssocRuleCounter::from(vec![(rulename.to_string(), 1)]) } else { AssocRuleCounter::new() };
+            let oosc = |_: &Rule, cnt| cnt;
+            let ootc = |_: &Rule, cnt1, cnt2| cnt1 + cnt2;
+            
+            let counter = counting_single_result(
+                def,
+                &c_atom,
+                &c_ref,
+                &oosc,
+                &ootc
+            );
+            self.nodes_count_per_definition.add_any_to_element(Some(rulename), counter.get_associated_count(Some(rulename)).unwrap());
+        }
+    }
+
+    pub fn update_all_definition_nodes_count(&mut self, counting_ref: bool) {
+        let oosc = |_: &Rule, cnt| cnt;
+        let ootc = |_: &Rule, cnt1, cnt2| cnt1 + cnt2;
+        let c_atom = |_: &Rule| RuleCounter::from(1);
+        let c_ref = |_: &Weak<Rule>| if counting_ref { RuleCounter::from(1) } else { RuleCounter::new() };
+        for (name, def) in self.rules.iter() {
+            let counter = counting_single_result(
+                def,
+                &c_atom,
+                &c_ref,
+                &oosc,
+                &ootc
+            );
+            self.nodes_count_per_definition.add_any_to_element(Some(name), counter.total() as usize);
+
+            self.nodes_count_per_definition.update_total(counter.total() as usize);
         }
     }
     
