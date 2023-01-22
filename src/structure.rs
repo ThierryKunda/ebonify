@@ -10,7 +10,7 @@ use std::rc::Rc;
 
 pub struct EbnfTree {
     pub syntax_source_name: Option<String>,
-    pub nodes_count: u32,
+    pub nodes_count_per_definition: AssocRuleCounter,
     pub rules: BTreeMap<String, Rc<Rule>>,
     pub identified_counts: AssocRuleCounter,
 }
@@ -19,7 +19,7 @@ impl EbnfTree {
     pub fn new(source_name: &str) -> Self {
         EbnfTree {
             syntax_source_name: Some(source_name.to_string()),
-            nodes_count: 0,
+            nodes_count_per_definition: AssocRuleCounter::new(),
             rules: BTreeMap::new(),
             identified_counts: AssocRuleCounter::new()
         }
@@ -81,8 +81,8 @@ impl From<&Vec<(String, Rc<Rule>)>> for EbnfTree {
         }
         EbnfTree {
             syntax_source_name: None,
-            nodes_count: 0,
             rules: pairs,
+            nodes_count_per_definition: AssocRuleCounter::new(),
             identified_counts: AssocRuleCounter::new(),
         }
     }
@@ -102,9 +102,9 @@ impl From<&str> for EbnfTree {
         }
         EbnfTree {
             syntax_source_name: None,
-            nodes_count: 0,
             rules: pairs,
-            identified_counts: AssocRuleCounter::new()
+            nodes_count_per_definition: AssocRuleCounter::new(),
+            identified_counts: AssocRuleCounter::new(),
         }
     }
 }
