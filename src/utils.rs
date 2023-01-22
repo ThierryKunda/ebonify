@@ -2,31 +2,34 @@ use std::collections::HashMap;
 use std::ops::{Add, Sub};
 
 
-pub trait Counter<T> {
-    fn total(&self) -> usize;
+pub trait Counter<T, I> {
+    fn total(&self) -> I;
     fn has_key_value_association(&self) -> bool;
-    fn add_one_to_total(&mut self);
-    fn remove_one_to_total(&mut self);
-    fn add_element(&mut self, element: &T);
-    fn remove_element(&mut self, element: &T);
+    fn add_any_to_total(&mut self, qty: I);
+    fn remove_any_to_total(&mut self, qty: I);
+    fn get_associated_count(&self, element: Option<&T>) -> Option<I>;
+    fn add_element_with_qty(&mut self, element: &T, qty: I);
+    fn remove_element_with_qty(&mut self, element: &T, qty: I);
     fn element_already_stored(&self, element: &T) -> Option<bool>;
-    fn add_one_to_element(&mut self, element: Option<&T>) -> bool {
+    fn add_any_to_element(&mut self, element: Option<&T>, qty: I) -> bool {
         if let Some(v) = element {
             if self.has_key_value_association() {
-                self.add_element(v);
+                self.add_element_with_qty(v, qty);
+            } else {
+                self.add_any_to_total(qty);
             }
-            self.add_one_to_total();
             true
         } else {
             false
         }
     }
-    fn remove_one_to_element(&mut self, element: Option<&T>) -> bool {
+    fn remove_any_to_element(&mut self, element: Option<&T>, qty: I) -> bool {
         if let Some(v) = element {
             if self.has_key_value_association() {
-                self.remove_element(v);
+                self.remove_element_with_qty(v, qty);
+            } else {
+                self.remove_any_to_total(qty);
             }
-            self.add_one_to_total();
             true
         } else {
             false
@@ -34,13 +37,20 @@ pub trait Counter<T> {
     }
 }
 
+#[derive(Debug)]
 pub struct RuleCounter {
-    total: usize
+    total: u32
 }
 
 impl RuleCounter {
     pub fn new() -> Self {
         RuleCounter { total: 0 }
+    }
+}
+
+impl From<u32> for RuleCounter {
+    fn from(tot: u32) -> Self {
+        Self { total: tot }
     }
 }
 
@@ -60,8 +70,14 @@ impl Sub for RuleCounter {
     }
 }
 
-impl Counter<usize> for RuleCounter {
-    fn total(&self) -> usize {
+impl Clone for RuleCounter {
+    fn clone(&self) -> Self {
+        Self { total: self.total.clone() }
+    }
+}
+
+impl Counter<usize, u32> for RuleCounter {
+    fn total(&self) -> u32 {
         self.total
     }
 
@@ -69,21 +85,25 @@ impl Counter<usize> for RuleCounter {
         false
     }
 
-    fn add_one_to_total(&mut self) {
-        self.total += 1;
+    fn add_any_to_total(&mut self, qty: u32) {
+        self.total += qty;
     }
 
-    fn remove_one_to_total(&mut self) {
-        if self.total > 0 {
-            self.total -= 1;
+    fn remove_any_to_total(&mut self, qty: u32) {
+        if self.total > qty {
+            self.total -= qty;
         }
     }
 
-    fn add_element(&mut self, _element: &usize) {}
-
-    fn remove_element(&mut self, _element: &usize) {}
-
     fn element_already_stored(&self, _element: &usize) -> Option<bool> { None }
+
+    fn add_element_with_qty(&mut self, element: &usize, qty: u32) {}
+
+    fn remove_element_with_qty(&mut self, element: &usize, qty: u32) {}
+
+    fn get_associated_count(&self, element: Option<&usize>) -> Option<u32> {
+        None
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -98,6 +118,10 @@ impl AssocRuleCounter {
             total: 0,
             occurrences: HashMap::new(),
         }
+    }
+
+    pub fn update_total(&mut self, to_add: usize) {
+        self.total += to_add;
     }
 }
 
@@ -116,17 +140,19 @@ impl Add for AssocRuleCounter {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self {
+        
         let mut res = AssocRuleCounter { total: 0, occurrences: HashMap::new() };
         // Get all occurences
         res.occurrences = self.occurrences;
         for occ in rhs.occurrences {
+
             if let Some(v) = res.occurrences.get_mut(&occ.0) {
                 *v += 1;
             } else {
                 res.occurrences.insert(occ.0, occ.1);
             }
         }
-        // Re-calculate the total amount of occurences of all identified rules
+        // Re-calculate the total amount of occurences of each rule
         res.total = res.occurrences.iter().fold(0, |acc, (_, occ)| acc + *occ);
         
         res
@@ -139,7 +165,7 @@ impl PartialEq for AssocRuleCounter {
     }
 }
 
-impl Counter<String> for AssocRuleCounter {
+impl Counter<String, usize> for AssocRuleCounter {
     fn total(&self) -> usize {
         self.total
     }
@@ -148,33 +174,66 @@ impl Counter<String> for AssocRuleCounter {
         true
     }
 
-    fn add_one_to_total(&mut self) {
-        self.total += 1;
+    fn add_any_to_total(&mut self, qty: usize) {
+        self.total += qty;
     }
 
-    fn remove_one_to_total(&mut self) {
-        self.total -= 1;
+    fn remove_any_to_total(&mut self, qty: usize) {
+        self.total -= qty;
     }
 
-    fn add_element(&mut self, element: &String) {
-        if self.occurrences.contains_key(element) {
-            let e = self.occurrences.get_mut(element).unwrap();
-            *e += 1;
+    fn add_any_to_element(&mut self, element: Option<&String>, qty: usize) -> bool {
+        if let Some(el) = element {
+            self.add_element_with_qty(el, qty);
+            true
         } else {
-            self.occurrences.insert(element.to_string(), 1);
+            false
         }
     }
 
-    fn remove_element(&mut self, element: &String) {
-        if self.occurrences.contains_key(element) {
-            let e = self.occurrences.get_mut(element).unwrap();
-            *e -= 1;
+    fn remove_any_to_element(&mut self, element: Option<&String>, qty: usize) -> bool {
+        if let Some(el) = element {
+            self.remove_element_with_qty(el, qty);
+            true
+        } else {
+            false
         }
     }
+    
 
     fn element_already_stored(&self, element: &String) -> Option<bool> {
         if self.has_key_value_association() {
             Some(self.occurrences.contains_key(element))
+        } else {
+            None
+        }
+    }
+
+    fn add_element_with_qty(&mut self, element: &String, qty: usize) {
+        if let Some(v) = self.occurrences.get_mut(element) {
+            *v += qty; 
+        } else {
+            self.occurrences.insert(element.to_string(), qty);
+        }
+    }
+
+    fn remove_element_with_qty(&mut self, element: &String, qty: usize) {
+        if let Some(v) = self.occurrences.get_mut(element) {
+            if *v > qty {
+                *v -= qty;
+            }
+        } else {
+            self.occurrences.insert(element.to_string(), qty);
+        }
+    }
+
+    fn get_associated_count(&self, element: Option<&String>) -> Option<usize> {
+        if let Some(el) = element {
+            if let Some(v) = self.occurrences.get(el) {
+                Some(*v)
+            } else {
+                None
+            }
         } else {
             None
         }
