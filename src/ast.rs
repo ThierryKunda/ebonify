@@ -170,7 +170,7 @@ pub fn tree_without_grouping(rule: Rc<Rule>) -> Rc<Rule> {
     }
 }
 
-pub fn counting_single_result<T, Cnt: Counter<T> + Clone, PA, PR, VS, VD>(rule: &Rc<Rule>, count_atomic: &PA, count_ref: &PR, op_on_single_counter: &VS, op_on_two_counters: &VD) -> Cnt
+pub fn counting_single_result<T, I, Cnt: Counter<T, I> + Clone, PA, PR, VS, VD>(rule: &Rc<Rule>, count_atomic: &PA, count_ref: &PR, op_on_single_counter: &VS, op_on_two_counters: &VD) -> Cnt
 where
     PA: Fn(&Rule) -> Cnt,
     PR: Fn(&Weak<Rule>) -> Cnt,
