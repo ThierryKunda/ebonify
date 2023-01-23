@@ -2,9 +2,6 @@ use std::collections::HashMap;
 use std::collections::hash_map::Iter;
 use std::ops::{Add, Sub};
 
-use serde::{Serialize, Deserialize};
-
-
 pub trait Counter<T, I> {
     fn total(&self) -> I;
     fn has_key_value_association(&self) -> bool;
