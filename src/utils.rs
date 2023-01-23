@@ -123,6 +123,10 @@ impl AssocRuleCounter {
     pub fn update_total(&mut self, to_add: usize) {
         self.total += to_add;
     }
+
+    pub fn iter(&self) -> Iter<'_, String, usize> {
+        self.occurrences.iter()
+    }
 }
 
 impl From<Vec<(String, usize)>> for AssocRuleCounter {
