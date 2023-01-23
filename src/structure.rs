@@ -107,6 +107,111 @@ impl EbnfTree {
         }
         self.identified_counts = counters_list.iter().fold(AssocRuleCounter::new(), |acc, cnt| acc + cnt.clone());
     }
+
+    pub fn get_rule_name_from_ref(&self, rule: &Weak<Rule>) -> Option<String> {
+        match rule.upgrade() {
+            Some(rl) => {
+                for (name, def) in self.rules.iter() {
+                    if are_same_tree(&rl, def) {
+                        return Some(name.to_string());
+                    }
+                }
+                return None;
+            },
+            None => None,
+        }
+    }
+
+    fn create_rule_json_schema(&self, rule_name: &String, definition: &Rc<Rule>) -> Value {
+        let mut m = Map::new();
+        match definition.deref() {
+            Rule::Literal(lit) => {
+                m.insert(String::from("node_type"), Value::String(String::from("atom")));
+                m.insert(String::from("node"), Value::String(String::from("literal")));
+                m.insert(String::from("value"), Value::String(lit.to_string()));
+                Value::Object(m)
+            },
+            Rule::Identifier(id) => {
+                m.insert(String::from("node_type"), Value::String(String::from("atom")));
+                m.insert(String::from("node"), Value::String(String::from("identifier")));
+                m.insert(String::from("value"), Value::String(id.to_string()));
+                Value::Object(m)
+            },
+            Rule::Ref(r) => {
+                m.insert(String::from("node_type"), Value::String(String::from("single")));
+                m.insert(String::from("node"), Value::String(String::from("identifier")));
+                m.insert(String::from("value"), if let Some(sub) = self.get_rule_name_from_ref(r) { Value::String(sub.to_string()) } else { Value::Null } );
+                Value::Object(m)
+            },
+            Rule::Alternation(left, right) => {
+                m.insert(String::from("node_type"), Value::String(String::from("dual")));
+                m.insert(String::from("node"), Value::String(String::from("alternation")));
+                m.insert(String::from("left"), self.create_rule_json_schema(rule_name, left));
+                m.insert(String::from("right"), self.create_rule_json_schema(rule_name, right));
+                Value::Object(m)
+            },
+            Rule::Concatenation(left, right) => {
+                m.insert(String::from("node_type"), Value::String(String::from("dual")));
+                m.insert(String::from("node"), Value::String(String::from("concatenation")));
+                m.insert(String::from("left"), self.create_rule_json_schema(rule_name, left));
+                m.insert(String::from("right"), self.create_rule_json_schema(rule_name, right));
+                Value::Object(m)
+            },
+            Rule::Exception(left, right) => {
+                m.insert(String::from("node_type"), Value::String(String::from("dual")));
+                m.insert(String::from("node"), Value::String(String::from("exception")));
+                m.insert(String::from("left"), self.create_rule_json_schema(rule_name, left));
+                m.insert(String::from("right"), self.create_rule_json_schema(rule_name, right));
+                Value::Object(m)
+            },
+            Rule::Optional(sub) => {
+                m.insert(String::from("node_type"), Value::String(String::from("dual")));
+                m.insert(String::from("node"), Value::String(String::from("optional")));
+                m.insert(String::from("sub_rule"), self.create_rule_json_schema(rule_name, sub));
+                Value::Object(m)
+            },
+            Rule::Repetition(sub) => {
+                m.insert(String::from("node_type"), Value::String(String::from("dual")));
+                m.insert(String::from("node"), Value::String(String::from("repetition")));
+                m.insert(String::from("sub_rule"), self.create_rule_json_schema(rule_name, sub));
+                Value::Object(m)
+            },
+            Rule::Grouping(sub) => {
+                m.insert(String::from("node_type"), Value::String(String::from("dual")));
+                m.insert(String::from("node"), Value::String(String::from("grouping")));
+                m.insert(String::from("sub_rule"), self.create_rule_json_schema(rule_name, sub));
+                Value::Object(m)
+            },
+        }
+    }
+
+    pub fn create_json_schema(&self) -> Value {
+        let mut schema = Map::new();
+        schema.insert(String::from("syntax_source_name"), if let Some(v) = self.syntax_source_name.as_ref() {Value::String(v.to_string())} else {Value::Null});
+        schema.insert(
+            String::from("rules"),
+            Value::Array(
+                self.rules.iter()
+                .map(|(name, def)| self.create_rule_json_schema(name, def))
+                .collect()
+            )
+        );
+        schema.insert(String::from("identified_count"), Value::Object({
+            let mut m = Map::new();
+            for (name, def) in self.identified_counts.iter() {
+                m.insert(name.to_string(), Value::Number(Number::from(def.clone())));
+            }
+            m
+        }));
+        schema.insert(String::from("nodes_count_per_definition"), Value::Object({
+            let mut m = Map::new();
+            for (name, def) in self.nodes_count_per_definition.iter() {
+                m.insert(name.to_string(), Value::Number(Number::from(def.clone())));
+            }
+            m
+        }));
+        Value::Object(schema)
+    }
 }
 
 impl From<&Vec<(String, Rc<Rule>)>> for EbnfTree {
