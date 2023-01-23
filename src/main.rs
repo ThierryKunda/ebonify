@@ -12,12 +12,12 @@ fn main() {
     if let Ok(mut tree) = example {
         tree.update_all_definition_nodes_count(true);
         tree.update_identified_counts();
-        for (name, definition) in tree.rules {
-            println!("{} = {:?}\n", name, definition);
-        }
-        println!("{:?}", tree.nodes_count_per_definition);
+        // for (name, definition) in tree.rules.iter() {
+        //     println!("{} = {:?}\n", name, definition);
+        // }
+        let schema = tree.create_json_schema();
+        println!("{:#}", schema);
     } else {
         println!("Error for the example");
     }
-
 }
