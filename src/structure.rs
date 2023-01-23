@@ -1,4 +1,6 @@
 use std::ops::Deref;
+use std::path::Path;
+use serde_json::{Value, Map, Number};
 
 use crate::ast::*;
 use crate::error::PreTreatmentError;
@@ -26,6 +28,7 @@ impl EbnfTree {
     }
 
     pub fn from_file(filepath: &str) -> Result<EbnfTree, PreTreatmentError> {
+        let fp = Path::new(filepath);
         let file_content = split_lines_from_file(filepath);
         match file_content {
             Ok(content) => {
@@ -38,7 +41,13 @@ impl EbnfTree {
                     let def = create_definition_tree(&tokens);
                     pairs.push((rule_name, get_pure_tree(def)));
                 }
-                Ok(EbnfTree::from(&pairs))
+                let mut res = EbnfTree::from(&pairs);
+                let mut syntax_source_name = fp.file_name().unwrap().to_str().unwrap().to_string();
+                for _ in 0..5 {
+                    syntax_source_name.pop();
+                }
+                res.syntax_source_name = Some(syntax_source_name);
+                Ok(res)
             },
             Err(_) => Err(PreTreatmentError),
         }
