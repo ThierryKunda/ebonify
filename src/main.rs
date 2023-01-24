@@ -5,6 +5,7 @@ mod ast;
 mod structure;
 mod utils;
 
+use serde_json::json;
 use structure::EbnfTree;
 
 fn main() {
@@ -15,8 +16,23 @@ fn main() {
         // for (name, definition) in tree.rules.iter() {
         //     println!("{} = {:?}\n", name, definition);
         // }
-        let schema = tree.create_json_schema();
-        println!("{:#}", schema);
+        // let schema = tree.create_json_schema();
+        // println!("{:#}", schema);
+        let repr_json = json!({
+            "node": "alternation",
+            "value": {
+                "left": {
+                    "node": "literal",
+                    "value": "hello"
+                },
+                "right": {
+                    "node": "identifier",
+                    "value": "world"
+                }
+            }
+        });
+        let res = crate::ast::rule_from_json(repr_json);
+        println!("{:?}", res);
     } else {
         println!("Error for the example");
     }
