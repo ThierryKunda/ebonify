@@ -1,6 +1,6 @@
 use std::ops::Deref;
 use std::path::Path;
-use serde_json::{Value, Map, Number};
+use serde_json::{Value, Map, Number, from_str as json_from_str};
 
 use crate::ast::*;
 use crate::error::PreTreatmentError;
@@ -26,7 +26,6 @@ impl EbnfTree {
             identified_counts: AssocRuleCounter::new()
         }
     }
-
     pub fn from_file(filepath: &str) -> Result<EbnfTree, PreTreatmentError> {
         let fp = Path::new(filepath);
         let file_content = split_lines_from_file(filepath);
