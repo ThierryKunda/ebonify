@@ -1,8 +1,51 @@
 use std::rc::{Rc, Weak};
 use std::ops::Deref;
 
+use serde_json::Value;
+
 
 use crate::{utils::Counter, ebnf_syntax::*, pre_treatment::{brackets_paired, tokenize_rule_from_str, split_members, is_binary, valid_single_operators}};
+
+pub fn rule_from_json(rule_json: Value) -> Rc<Rule> {
+    if let Value::Object(obj) = rule_json {
+        if let (Some(Value::String(single)), Some(value)) = (obj.get(&String::from("node")), obj.get(&String::from("value"))) {
+            match (single.as_str(), value) {
+                ("literal", Value::String(lit)) => return Rc::new(Rule::Literal(lit.to_string())),
+                ("identifier", Value::String(id)) => return Rc::new(Rule::Identifier(id.to_string())),
+                (_, Value::Object(m))
+                => if let (Some(left), Some(right)) = (
+                    m.get(&String::from("left")),
+                    m.get(&String::from("right"))
+                ) {
+                    match single.as_str() {
+                        "alternation" => return Rc::new(Rule::Alternation(
+                            rule_from_json(left.clone()),
+                            rule_from_json(right.clone())
+                        )),
+                        "concatenation" => return Rc::new(Rule::Concatenation(
+                            rule_from_json(left.clone()),
+                            rule_from_json(right.clone())
+                        )),
+                        "exception" => return Rc::new(Rule::Exception(
+                            rule_from_json(left.clone()),
+                            rule_from_json(right.clone())
+                        )),
+                        _ => (),
+                    }
+                },
+                _ => ()
+            }
+        } else if let (Some(Value::String(dual)), Some(v)) = (obj.get(&String::from("node")), obj.get(&String::from("v"))) {
+            match dual.as_str() {
+                "repetition" => return Rc::new(Rule::Repetition(rule_from_json(v.clone()))),
+                "grouping" => return Rc::new(Rule::Repetition(rule_from_json(v.clone()))),
+                "optional" => return Rc::new(Rule::Repetition(rule_from_json(v.clone()))),
+                _ => (),
+            }
+        }
+    }
+    return Rc::new(Rule::Identifier(String::from("")));
+}
 
 pub fn tree_with_id_ref(name_def_pair: (&String, &Rc<Rule>), rule_to_transform: &Rc<Rule>) -> Rc<Rule> {
     match rule_to_transform.deref() {
