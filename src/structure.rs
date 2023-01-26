@@ -1,15 +1,16 @@
 use std::ops::Deref;
 use std::path::Path;
-use serde_json::{Value, Map, Number, from_str as json_from_str};
+use serde_json::{Value, Map, Number, from_str as json_from_str, Error};
 
 use crate::ast::*;
-use crate::error::PreTreatmentError;
+use crate::error::{PreTreatmentError, JSONParsingError};
 use crate::pre_treatment::{split_members, split_lines, tokenize_rule_from_str, split_lines_from_file};
 use crate::ebnf_syntax::*;
 use crate::utils::{AssocRuleCounter, Counter, RuleCounter};
 use std::collections::BTreeMap;
 use std::rc::{Rc, Weak};
 
+#[derive(Debug)]
 pub struct EbnfTree {
     pub syntax_source_name: Option<String>,
     pub nodes_count_per_definition: AssocRuleCounter,
