@@ -1,5 +1,6 @@
 use std::fmt::{Display, Debug};
 
+#[derive(Debug)]
 pub struct PreTreatmentError;
 
 impl Display for PreTreatmentError {
@@ -8,10 +9,13 @@ impl Display for PreTreatmentError {
     }
 }
 
-impl Debug for PreTreatmentError {
+impl std::error::Error for PreTreatmentError {}
+
+#[derive(Debug)]
+pub struct JSONParsingError;
+
+impl Display for JSONParsingError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{{ file: {}, line: {} }}", file!(), line!())
+        write!(f, "The JSON content is invalid")
     }
 }
-
-impl std::error::Error for PreTreatmentError {}
