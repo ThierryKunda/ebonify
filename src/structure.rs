@@ -26,6 +26,41 @@ impl EbnfTree {
             identified_counts: AssocRuleCounter::new()
         }
     }
+    pub fn from_json(json_content: Value) -> Result<EbnfTree, JSONParsingError> {
+        let mut res = Self {
+            syntax_source_name: None,
+            nodes_count_per_definition: AssocRuleCounter::new(),
+            rules: BTreeMap::new(),
+            identified_counts: AssocRuleCounter::new(),
+        };
+        if let Value::Object(m) = json_content {
+            if let Some(Value::String(s)) = m.get(&String::from("syntax_source_name")) {
+                res.syntax_source_name = Some(s.to_string());
+            }
+            if let (
+                Some(nodes_count_per_definition),
+                Some(rules),
+                Some(identified_counts)
+            ) = (
+                m.get(&String::from("nodes_count_per_definition")),
+                m.get(&String::from("rules")),
+                m.get(&String::from("identified_counts"))
+                
+            ) {
+                if let Some(v) = assoc_counter_from_json(nodes_count_per_definition) {
+                    res.nodes_count_per_definition = v;
+                }
+                if let Some(v) = assoc_counter_from_json(identified_counts) {
+                    res.identified_counts = v;
+                }
+                if let Some(v) = btree_rule_from_json(rules.to_owned()) {
+                    res.rules = v;
+                }
+            }
+            return Ok(res);
+        }
+        return Err(JSONParsingError);
+    }
     pub fn from_file(filepath: &str) -> Result<EbnfTree, PreTreatmentError> {
         let fp = Path::new(filepath);
         let file_content = split_lines_from_file(filepath);
