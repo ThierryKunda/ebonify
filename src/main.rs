@@ -19,20 +19,46 @@ fn main() {
         // let schema = tree.create_json_schema();
         // println!("{:#}", schema);
         let repr_json = json!({
-            "node": "alternation",
-            "value": {
-                "left": {
-                    "node": "literal",
-                    "value": "hello"
+            "syntax_source_name": "my_syntax",
+            "nodes_count_per_definition": {
+                "my_rule": 2,
+                "his_rule": 3,
+            },
+            "rules": {
+                "my_rule": {
+                    "node": "alternation",
+                    "value": {
+                        "left": {
+                            "node": "literal",
+                            "value": "hello"
+                        },
+                        "right": {
+                            "node": "literal",
+                            "value": "world"
+                        }
+                    }
                 },
-                "right": {
-                    "node": "identifier",
-                    "value": "world"
+                "his_rule": {
+                    "node": "alternation",
+                    "value": {
+                        "left": {
+                            "node": "identifier",
+                            "value": "my_rule"
+                        },
+                        "right": {
+                            "node": "literal",
+                            "value": "goodbye"
+                        }
+                    }
                 }
+            },
+            "identified_counts": {
+                "my_rule": 1,
+                "his_rule": 1,
             }
         });
-        let res = crate::ast::rule_from_json(repr_json);
-        println!("{:?}", res);
+        let res = crate::structure::EbnfTree::from_json(repr_json);
+        println!("{:?}\n", res);
     } else {
         println!("Error for the example");
     }
