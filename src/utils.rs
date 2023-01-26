@@ -189,6 +189,7 @@ impl Counter<String, usize> for AssocRuleCounter {
     fn add_any_to_element(&mut self, element: Option<&String>, qty: usize) -> bool {
         if let Some(el) = element {
             self.add_element_with_qty(el, qty);
+            self.add_any_to_total(qty);
             true
         } else {
             false
@@ -198,6 +199,7 @@ impl Counter<String, usize> for AssocRuleCounter {
     fn remove_any_to_element(&mut self, element: Option<&String>, qty: usize) -> bool {
         if let Some(el) = element {
             self.remove_element_with_qty(el, qty);
+            self.remove_any_to_total(qty);
             true
         } else {
             false
