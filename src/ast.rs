@@ -1,10 +1,38 @@
+use std::collections::BTreeMap;
 use std::rc::{Rc, Weak};
 use std::ops::Deref;
 
 use serde_json::Value;
 
-
+use crate::utils::AssocRuleCounter;
 use crate::{utils::Counter, ebnf_syntax::*, pre_treatment::{brackets_paired, tokenize_rule_from_str, split_members, is_binary, valid_single_operators}};
+
+pub fn btree_rule_from_json(rules_json: Value) -> Option<BTreeMap<String, Rc<Rule>>> {
+    if let Value::Object(name_def_pairs) = rules_json {
+        let mut res: BTreeMap<String, Rc<Rule>> = BTreeMap::new();
+        for (name, def) in name_def_pairs {
+            res.insert(name, rule_from_json(def));
+        }
+        Some(res)
+    } else {
+        None
+    }
+}
+
+pub fn assoc_counter_from_json(counter_json: &Value) -> Option<AssocRuleCounter> {
+    if let Value::Object(m) = counter_json {
+        let mut res = AssocRuleCounter::new();
+        for (k,v) in m {
+            if let Value::Number(num) = v {
+                if let Some(qty) = num.as_u64() {
+                    res.add_any_to_element(Some(k), qty as usize);
+                }
+            }
+        }
+        return Some(res);
+    }
+    return None;
+}
 
 pub fn rule_from_json(rule_json: Value) -> Rc<Rule> {
     if let Value::Object(obj) = rule_json {
