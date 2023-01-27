@@ -6,3 +6,4 @@ mod ast;
 mod tests;
 mod structure;
 mod utils;
+mod cli;
