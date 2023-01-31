@@ -75,6 +75,53 @@ pub fn rule_from_json(rule_json: Value) -> Rc<Rule> {
     return Rc::new(Rule::Identifier(String::from("")));
 }
 
+pub fn get_grammar(rule: &Rc<Rule>) -> Rc<Rule> {
+    match rule.deref() {
+        Rule::Literal(lit) => Rc::new(Rule::Literal(lit.clone())),
+        Rule::Identifier(id) => Rc::new(Rule::Literal(id.clone())),
+        Rule::Ref(r) => if let Some(sub) = r.upgrade().as_ref() {
+            Rc::new(Rule::Ref(Rc::downgrade(sub)))
+        } else {
+            Rc::new(Rule::Identifier(String::from("No ref")))
+        },
+        Rule::Alternation(left, right) => Rc::new(
+            Rule::Alternation(
+                get_grammar(left),
+                get_grammar(right)
+            )
+        ),
+        Rule::Concatenation(left, right) => Rc::new(
+            Rule::Concatenation(
+                get_grammar(left),
+                get_grammar(right)
+            )
+        ),
+        Rule::Exception(left, right) => Rc::new(
+            Rule::Exception(
+                get_grammar(left),
+                get_grammar(right)
+            )
+        ),
+        Rule::Grouping(sub) => Rc::new(
+            Rule::Optional(get_grammar(sub))
+        ),
+        Rule::Optional(sub) => Rc::new(
+            Rule::Optional(get_grammar(sub))
+        ),
+        Rule::Repetition(sub) => Rc::new(
+            Rule::Alternation(
+                Rc::clone(sub),
+                Rc::new(
+                    Rule::Concatenation(
+                        Rc::clone(sub),
+                        Rc::new(Rule::Ref(Rc::downgrade(sub)))
+                    )
+                )
+            )
+        ),
+    }
+}
+
 pub fn tree_with_id_ref(name_def_pair: (&String, &Rc<Rule>), rule_to_transform: &Rc<Rule>) -> Rc<Rule> {
     match rule_to_transform.deref() {
         Rule::Identifier(id) => if id == name_def_pair.0 {
