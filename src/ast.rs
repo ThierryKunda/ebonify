@@ -202,7 +202,7 @@ pub fn get_pure_tree(rule: Rc<Rule>) -> Rc<Rule> {
     }
 }
 
-pub fn are_same_tree<'a>(rule_1: &'a Rule, rule_2: &'a Rule) -> bool {
+pub fn are_same_tree<'a>(rule_1: &'a Rule, rule_2: &'a Rule, leaves_compared: bool, deep: bool) -> bool {
     match (rule_1, rule_2) {
         (
             Rule::Literal(s1),
@@ -211,7 +211,7 @@ pub fn are_same_tree<'a>(rule_1: &'a Rule, rule_2: &'a Rule) -> bool {
         (
             Rule::Identifier(s1),
             Rule::Identifier(s2),
-        ) => s1 == s2,
+        ) => if leaves_compared { s1 == s2 } else { true },
         (
             Rule::Repetition(el1),
             Rule::Repetition(el2),
@@ -223,7 +223,7 @@ pub fn are_same_tree<'a>(rule_1: &'a Rule, rule_2: &'a Rule) -> bool {
         (
             Rule::Optional(el1),
             Rule::Optional(el2),
-        ) => are_same_tree(el1, el2),
+        ) => are_same_tree(el1, el2, leaves_compared, deep),
         (
             Rule::Alternation(sub_1, sub_2),
             Rule::Alternation(sub_3, sub_4),
@@ -236,11 +236,13 @@ pub fn are_same_tree<'a>(rule_1: &'a Rule, rule_2: &'a Rule) -> bool {
         (
             Rule::Exception(sub_1, sub_2),
             Rule::Exception(sub_3, sub_4),
-        ) => are_same_tree(sub_1, sub_3) && are_same_tree(sub_2, sub_4),
-        (Rule::Ref(r1), Rule::Ref(r2)) => match (r1.upgrade(), r2.upgrade()) {
-            (None, None) => true,
-            (Some(sub_1), Some(sub_2)) => are_same_tree(sub_1.deref(), sub_2.deref()),
-            _ => false,
+        ) => are_same_tree(sub_1, sub_3, leaves_compared, deep) && are_same_tree(sub_2, sub_4, leaves_compared, deep),
+        (Rule::Ref(r1), Rule::Ref(r2)) => if !deep { true } else {
+            match (r1.upgrade(), r2.upgrade()) {
+                (None, None) => true,
+                (Some(sub_1), Some(sub_2)) => are_same_tree(sub_1.deref(), sub_2.deref(), leaves_compared, deep),
+                _ => false,
+            }
         }
         _ => false,
     }
