@@ -453,10 +453,10 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, util
         let tree_c = create_rule_tree(&tokens_c);
         let tree_d = create_rule_tree(&tokens_d);
 
-        assert!(are_same_tree(&tree_0, &tree_a));
-        assert!(are_same_tree(&tree_1, &tree_b));
-        assert!(are_same_tree(&tree_2, &tree_c));
-        assert!(are_same_tree(&tree_3, &tree_d));
+        assert!(are_same_tree(&tree_0, &tree_a, true, false));
+        assert!(are_same_tree(&tree_1, &tree_b, true, false));
+        assert!(are_same_tree(&tree_2, &tree_c, true, false));
+        assert!(are_same_tree(&tree_3, &tree_d, true, false));
 
     }
 
@@ -533,5 +533,5 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, util
         let ref_to = Rc::new(Rule::Ref(Rc::downgrade(&tree_from)));
         let tree_res = tree_with_id_ref((&name, &tree_from), &tree);
         let tree_expected = Rc::new(Rule::Concatenation(Rc::clone(&ref_to), Rc::new(Rule::Concatenation(Rc::new(Rule::Literal(".".to_string())), Rc::clone(&ref_to)))));
-        assert!(are_same_tree(&tree_res, &tree_expected));
+        assert!(are_same_tree(&tree_res, &tree_expected, true, true));
     }
