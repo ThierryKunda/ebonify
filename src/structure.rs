@@ -156,7 +156,7 @@ impl EbnfTree {
         match rule.upgrade() {
             Some(rl) => {
                 for (name, def) in self.rules.iter() {
-                    if are_same_tree(&rl, def) {
+                    if are_same_tree(&rl, def, true, false) {
                         return Some(name.to_string());
                     }
                 }
