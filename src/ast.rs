@@ -288,6 +288,24 @@ pub fn tree_without_grouping(rule: Rc<Rule>) -> Rc<Rule> {
     }
 }
 
+pub fn generate_rule_result<GA, GR, GS, GD>(rule: &Rc<Rule>, gen_from_atomic: &GA, gen_from_ref: &GR, gen_from_single: &GS, gen_from_dual: &GD) -> Rc<Rule>
+where
+    GA: Fn(&Rule) -> Rc<Rule>,
+    GR: Fn(&Weak<Rule>) -> Rc<Rule>,
+    GS: Fn(&Rule, &Rc<Rule>) -> Rc<Rule>,
+    GD: Fn(&Rule, &Rc<Rule>, &Rc<Rule>) -> Rc<Rule> {
+        match rule.deref() {
+            Rule::Literal(_) | Rule::Identifier(_) => gen_from_atomic(rule),
+            Rule::Ref(r) => gen_from_ref(r),
+            Rule::Alternation(left, right) |
+            Rule::Concatenation(left, right) |
+            Rule::Exception(left, right) => gen_from_dual(rule, left, right),
+            Rule::Repetition(sub) |
+            Rule::Grouping(sub) |
+            Rule::Optional(sub)  => gen_from_single(rule, sub),
+        }
+}
+
 pub fn counting_single_result<T, I, Cnt: Counter<T, I> + Clone, PA, PR, VS, VD>(rule: &Rc<Rule>, count_atomic: &PA, count_ref: &PR, op_on_single_counter: &VS, op_on_two_counters: &VD) -> Cnt
 where
     PA: Fn(&Rule) -> Cnt,
