@@ -77,37 +77,25 @@ pub fn rule_from_json(rule_json: Value) -> Rc<Rule> {
 
 pub fn grammarize_repetition(rule: &Rc<Rule>) -> Rc<Rule> {
     match rule.deref() {
-        Rule::Literal(lit) => Rc::new(Rule::Literal(lit.clone())),
-        Rule::Identifier(id) => Rc::new(Rule::Identifier(id.clone())),
-        Rule::Ref(r) => if let Some(sub) = r.upgrade() {
-            Rc::new(Rule::Ref(Rc::downgrade(&sub)))
-        } else {
-            Rc::new(Rule::Identifier(String::from("No reference")))
-        },
-        Rule::Alternation(left, right) => Rc::new(
-            Rule::Alternation(grammarize_repetition(left), grammarize_repetition(right))
-        ),
-        Rule::Concatenation(left, right) => Rc::new(
-            Rule::Concatenation(grammarize_repetition(left), grammarize_repetition(right))
-        ),
-        Rule::Exception(left, right) => Rc::new(
-            Rule::Exception(grammarize_repetition(left), grammarize_repetition(right))
-        ),
-        Rule::Grouping(sub) => Rc::new(Rule::Grouping(grammarize_repetition(sub))),
-        Rule::Optional(sub) => Rc::new(Rule::Optional(grammarize_repetition(sub))),
-        Rule::Repetition(sub) => Rc::new(
-            Rule::Alternation(
+        Rule::Atomic(_, _) | Rule::Ref(_) => Rc::clone(rule),
+        Rule::Single(sub, SingleKind::Repetition) => Rc::new(Rule::Dual(
+            grammarize_repetition(sub),
+            DualKind::Alternation,
+            Rc::new(Rule::Dual(
                 grammarize_repetition(sub),
-                Rc::new(
-                    Rule::Concatenation(
-                        grammarize_repetition(sub), 
-                        Rc::new(
-                            Rule::Ref(Rc::downgrade(&grammarize_repetition(sub)))
-                        )
-                    )
-                ) 
-            )
-        ),
+                DualKind::Concatenation,
+                Rc::new(Rule::Ref(Rc::downgrade(&sub)))
+            ))
+        )),
+        Rule::Single(sub, kind) => Rc::new(Rule::Single(
+            grammarize_repetition(sub),
+            kind.clone()
+        )),
+        Rule::Dual(left, kind, right) => Rc::new(Rule::Dual(
+            grammarize_repetition(left),
+            kind.clone(),
+            grammarize_repetition(right)
+        ))
     }
 }
 
