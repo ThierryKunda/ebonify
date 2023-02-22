@@ -114,80 +114,40 @@ pub fn grammarize_repetition(rule: &Rc<Rule>) -> Rc<Rule> {
 
 pub fn tree_with_id_ref(name_def_pair: (&String, &Rc<Rule>), rule_to_transform: &Rc<Rule>) -> Rc<Rule> {
     match rule_to_transform.deref() {
-        Rule::Identifier(id) => if id == name_def_pair.0 {
+        Rule::Atomic(s, AtomicKind::Identifier) => if s == name_def_pair.0 {
             Rc::new(Rule::Ref(Rc::downgrade(name_def_pair.1)))
         } else {
             Rc::clone(rule_to_transform)
         },
-        Rule::Literal(_) | Rule::Ref(_) => Rc::clone(rule_to_transform),
-        Rule::Alternation(left, right) => Rc::new(Rule::Alternation(
+        Rule::Atomic(_, AtomicKind::Literal) | Rule::Ref(_) => Rc::clone(rule_to_transform),
+        Rule::Single(sub, kind) => Rc::new(Rule::Single(
+            tree_with_id_ref(name_def_pair, sub),
+            kind.clone()
+        )),
+        Rule::Dual(left, kind, right) => Rc::new(Rule::Dual(
             tree_with_id_ref(name_def_pair, left),
+            kind.clone(),
             tree_with_id_ref(name_def_pair, right)
-        )),
-        Rule::Concatenation(left, right) => Rc::new(Rule::Concatenation(
-            tree_with_id_ref(name_def_pair, left),
-            tree_with_id_ref(name_def_pair, right)
-        )),
-        Rule::Exception(left, right) => Rc::new(Rule::Exception(
-            tree_with_id_ref(name_def_pair, left),
-            tree_with_id_ref(name_def_pair, right)
-        )),
-        Rule::Repetition(sub) => Rc::new(Rule::Repetition(
-            tree_with_id_ref(name_def_pair, sub)
-        )),
-        Rule::Grouping(sub) => Rc::new(Rule::Grouping(
-            tree_with_id_ref(name_def_pair, sub)
-        )),
-        Rule::Optional(sub) => Rc::new(Rule::Optional(
-            tree_with_id_ref(name_def_pair, sub)
         )),
     }
 }
 
 pub fn get_pure_tree(rule: Rc<Rule>) -> Rc<Rule> {
     match rule.deref() {
-        Rule::Literal(lit) => Rc::new(Rule::Literal(lit.to_string())),
-        Rule::Identifier(id) => Rc::new(Rule::Identifier(id.to_string())),
-        Rule::Alternation(left, right) => Rc::new(
-            Rule::Alternation(
-                get_pure_tree(Rc::clone(left)),
-                get_pure_tree(Rc::clone(right)),
-            )
+        Rule::Atomic(s, kind) => Rc::new(Rule::Atomic(s.to_string(), kind.clone())),
+        Rule::Single(sub, kind) => Rc::new(
+            Rule::Single(get_pure_tree(Rc::clone(sub)), kind.clone())
         ),
-        Rule::Concatenation(left, right) => Rc::new(
-            Rule::Concatenation(
-                get_pure_tree(Rc::clone(left)),
-                get_pure_tree(Rc::clone(right)),
-            )
-        ),
-        Rule::Exception(left, right) => Rc::new(
-            Rule::Exception(
-                get_pure_tree(Rc::clone(left)),
-                get_pure_tree(Rc::clone(right)),
-            )
-        ),
-        Rule::Repetition(sub) => Rc::new(
-            Rule::Repetition(
-                get_pure_tree(Rc::clone(sub))
-            )
-        ),
-        Rule::Grouping(sub) => Rc::new(
-            Rule::Grouping(
-                get_pure_tree(Rc::clone(sub))
-            )
-        ),
-        Rule::Optional(sub) => Rc::new(
-            Rule::Optional(
-                get_pure_tree(Rc::clone(sub))
-            )
+        Rule::Dual(left, kind, right) => Rc::new(
+          Rule::Dual(
+            get_pure_tree(Rc::clone(left)), kind.clone(), get_pure_tree(Rc::clone(left)))  
         ),
         Rule::Ref(r) => match r.upgrade() {
             Some(sub) => match sub.deref() {
-                Rule::Literal(lit) => Rc::new(Rule::Literal(lit.to_string())),
-                Rule::Identifier(lit) => Rc::new(Rule::Identifier(lit.to_string())),
+                Rule::Atomic(s, kind) => Rc::new(Rule::Atomic(s.to_string(), kind.clone())),
                 _ => Rc::clone(&rule)
             },
-            None => Rc::new(Rule::Literal(String::from("None reference"))),
+            None => Rc::new(Rule::Atomic(String::from("None reference"), AtomicKind::Literal)),
         },
     }
 }
