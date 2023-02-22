@@ -61,15 +61,15 @@ pub fn tokenize(token: String) -> Token {
         ")" => Token::Op(Operator::GroupingR),
         s => {
             if s.starts_with("\"") && s.ends_with("\"") {
-                return Token::Rl(Rc::new(Rule::Literal(s.trim_matches('"').to_string())));
+                return Token::Rl(Rc::new(Rule::Atomic(s.trim_matches('"').to_string(), AtomicKind::Literal)));
             } else if s.starts_with("\'") && s.ends_with("\'") {
-                return Token::Rl(Rc::new(Rule::Literal(s.trim_matches('\'').to_string())));
+                return Token::Rl(Rc::new(Rule::Atomic(s.trim_matches('\'').to_string(), AtomicKind::Literal)));
             } else if s.starts_with("\"") || s.starts_with("\'") || s.ends_with("\"") || s.ends_with("\'") {
                 return Token::Invalid;
             } else if s.starts_with("\"") || s.ends_with("\"") {
                 return Token::Invalid;
             }
-            Token::Rl(Rc::new(Rule::Identifier(s.to_string())))
+            Token::Rl(Rc::new(Rule::Atomic(s.to_string(), AtomicKind::Identifier)))
         },
     }
 }
@@ -280,8 +280,8 @@ pub fn tokens_equals(token1: &Token, token2: &Token) -> bool {
             _ => false,
         },
         (Token::Rl(rl1), Token::Rl(rl2)) => match (rl1.deref(), rl2.deref()) {
-            (Rule::Literal(s1), Rule::Literal(s2)) |
-            (Rule::Identifier(s1), Rule::Identifier(s2)) => s1 == s2,
+            (Rule::Atomic(s1, AtomicKind::Literal), Rule::Atomic(s2, AtomicKind::Literal)) |
+            (Rule::Atomic(s1, AtomicKind::Identifier), Rule::Atomic(s2, AtomicKind::Identifier)) => s1 == s2,
             _ => false,
         }
         _ => false,
