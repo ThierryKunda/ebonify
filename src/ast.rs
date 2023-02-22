@@ -38,8 +38,8 @@ pub fn rule_from_json(rule_json: Value) -> Rc<Rule> {
     if let Value::Object(obj) = rule_json {
         if let (Some(Value::String(single)), Some(value)) = (obj.get(&String::from("node")), obj.get(&String::from("value"))) {
             match (single.as_str(), value) {
-                ("literal", Value::String(lit)) => return Rc::new(Rule::Literal(lit.to_string())),
-                ("identifier", Value::String(id)) => return Rc::new(Rule::Identifier(id.to_string())),
+                ("literal", Value::String(lit)) => return Rc::new(Rule::Atomic(lit.to_string(), AtomicKind::Identifier)),
+                ("identifier", Value::String(id)) => return Rc::new(Rule::Atomic(id.to_string(), AtomicKind::Identifier)),
                 (_, Value::Object(m))
                 => if let (Some(left), Some(right)) = (
                     m.get(&String::from("left")),
