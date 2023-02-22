@@ -287,14 +287,10 @@ where
     GS: Fn(&Rule, &Rc<Rule>) -> Rc<Rule>,
     GD: Fn(&Rule, &Rc<Rule>, &Rc<Rule>) -> Rc<Rule> {
         match rule.deref() {
-            Rule::Literal(_) | Rule::Identifier(_) => gen_from_atomic(rule),
-            Rule::Ref(r) => gen_from_ref(r),
-            Rule::Alternation(left, right) |
-            Rule::Concatenation(left, right) |
-            Rule::Exception(left, right) => gen_from_dual(rule, left, right),
-            Rule::Repetition(sub) |
-            Rule::Grouping(sub) |
-            Rule::Optional(sub)  => gen_from_single(rule, sub),
+            Rule::Atomic(_, _) => gen_from_atomic(rule),
+            Rule::Single(sub, _) => gen_from_single(rule, sub),
+            Rule::Dual(left, _, right) => gen_from_dual(rule, left, right),
+            Rule::Ref(r) => gen_from_ref(r)
         }
 }
 
