@@ -169,12 +169,12 @@ impl EbnfTree {
     fn create_rule_json_schema(&self, rule_name: &String, definition: &Rc<Rule>) -> Value {
         let mut m = Map::new();
         match definition.deref() {
-            Rule::Literal(lit) => {
+            Rule::Atomic(lit, AtomicKind::Literal) => {
                 m.insert(String::from("node"), Value::String(String::from("literal")));
                 m.insert(String::from("value"), Value::String(lit.to_string()));
                 Value::Object(m)
             },
-            Rule::Identifier(id) => {
+            Rule::Atomic(id, AtomicKind::Identifier) => {
                 m.insert(String::from("node"), Value::String(String::from("identifier")));
                 m.insert(String::from("value"), Value::String(id.to_string()));
                 Value::Object(m)
@@ -184,35 +184,35 @@ impl EbnfTree {
                 m.insert(String::from("value"), if let Some(sub) = self.get_rule_name_from_ref(r) { Value::String(sub.to_string()) } else { Value::Null } );
                 Value::Object(m)
             },
-            Rule::Alternation(left, right) => {
+            Rule::Dual(left, DualKind::Alternation, right) => {
                 m.insert(String::from("node"), Value::String(String::from("alternation")));
                 m.insert(String::from("left"), self.create_rule_json_schema(rule_name, left));
                 m.insert(String::from("right"), self.create_rule_json_schema(rule_name, right));
                 Value::Object(m)
             },
-            Rule::Concatenation(left, right) => {
+            Rule::Dual(left, DualKind::Concatenation, right) => {
                 m.insert(String::from("node"), Value::String(String::from("concatenation")));
                 m.insert(String::from("left"), self.create_rule_json_schema(rule_name, left));
                 m.insert(String::from("right"), self.create_rule_json_schema(rule_name, right));
                 Value::Object(m)
             },
-            Rule::Exception(left, right) => {
+            Rule::Dual(left, DualKind::Exception, right) => {
                 m.insert(String::from("node"), Value::String(String::from("exception")));
                 m.insert(String::from("left"), self.create_rule_json_schema(rule_name, left));
                 m.insert(String::from("right"), self.create_rule_json_schema(rule_name, right));
                 Value::Object(m)
             },
-            Rule::Optional(sub) => {
+            Rule::Single(sub, SingleKind::Optional) => {
                 m.insert(String::from("node"), Value::String(String::from("optional")));
                 m.insert(String::from("value"), self.create_rule_json_schema(rule_name, sub));
                 Value::Object(m)
             },
-            Rule::Repetition(sub) => {
+            Rule::Single(sub, SingleKind::Repetition) => {
                 m.insert(String::from("node"), Value::String(String::from("repetition")));
                 m.insert(String::from("value"), self.create_rule_json_schema(rule_name, sub));
                 Value::Object(m)
             },
-            Rule::Grouping(sub) => {
+            Rule::Single(sub, SingleKind::Grouping) => {
                 m.insert(String::from("node"), Value::String(String::from("grouping")));
                 m.insert(String::from("value"), self.create_rule_json_schema(rule_name, sub));
                 Value::Object(m)
