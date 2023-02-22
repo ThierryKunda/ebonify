@@ -47,26 +47,6 @@ pub enum Token {
     Invalid,
 }
 
-impl Token {
-    pub fn show(&self) {
-        match self {
-            Token::Op(op) => match op {
-                Operator::Alternation => print!(" | "),
-                Operator::Concatenation => print!(" , "),
-                Operator::Exception => print!(" - "),
-                Operator::OptionalL => print!(" [ "),
-                Operator::OptionalR => print!(" ] "),
-                Operator::RepetitionL => print!(" {{ "),
-                Operator::RepetitionR => print!(" }} "),
-                Operator::GroupingL => print!(" ( "),
-                Operator::GroupingR => print!(" ) "),
-            },
-            Token::Rl(rl) => rl.show(),
-            Token::Invalid => print!("INVALID"),
-        }
-    }
-}
-
 fn println_shift(txt: &str, shift: u8) {
     for _ in 1..shift {
         print!("  ");
