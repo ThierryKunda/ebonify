@@ -1,6 +1,6 @@
 use std::{ops::Deref, rc::Rc};
 
-use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, utils::AssocRuleCounter};
+use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule, AtomicKind, SingleKind, DualKind}, ast::*, utils::AssocRuleCounter};
 
 #[test]
     fn split_lines_from_file_test() {
@@ -41,7 +41,7 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, util
 
         match lit1_token {
             Token::Rl(rl) => match rl.deref() {
-                Rule::Literal(lit) => assert_eq!(lit, &String::from("a")),
+                Rule::Atomic(lit, AtomicKind::Literal) => assert_eq!(lit, &String::from("a")),
                 _ => assert!(false),
             },
             _ => assert!(false),
@@ -49,7 +49,7 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, util
 
         match lit2_token {
             Token::Rl(rl) => match rl.deref() {
-                Rule::Literal(lit) => assert_eq!(lit, &String::from("a")),
+                Rule::Atomic(lit, AtomicKind::Literal) => assert_eq!(lit, &String::from("a")),
                 _ => assert!(false),
             },
             _ => assert!(false),
@@ -57,7 +57,7 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, util
 
         match var_token {
             Token::Rl(rl) => match rl.deref() {
-                Rule::Identifier(idt) => assert_eq!(idt, &String::from("var")),
+                Rule::Atomic(idt, AtomicKind::Identifier) => assert_eq!(idt, &String::from("var")),
                 _ => assert!(false),
             },
             _ => assert!(false),
@@ -329,13 +329,13 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, util
         let tree_5 = create_rule_tree(&tokens_5);
         
         match tree_0 {
-            Rule::Identifier(_) => assert!(true),
+            Rule::Atomic(_, AtomicKind::Identifier) => assert!(true),
             _ => assert!(false),
         }
         match tree_1 {
-            Rule::Repetition(sub) => match sub.deref() {
+            Rule::Single(sub, SingleKind::Repetition) => match sub.deref() {
                 Rule::Ref(r) => match r.upgrade() {
-                    Some(st) => if let Rule::Identifier(id) = st.deref() {
+                    Some(st) => if let Rule::Atomic(id, AtomicKind::Identifier) = st.deref() {
                         assert_eq!(id, &String::from("yes"));
                     },
                     None => assert!(false),
@@ -345,12 +345,12 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, util
             _ => assert!(false),
         }
         match tree_2 {
-            Rule::Grouping(_) => assert!(true),
+            Rule::Single(_, SingleKind::Grouping) => assert!(true),
             _ => assert!(false),
         }
         match tree_3 {
-            Rule::Optional(el) => match el.deref() {
-                Rule::Alternation(left, right) => match (left.deref(), right.deref()) {
+            Rule::Single(el, SingleKind::Optional) => match el.deref() {
+                Rule::Dual(left, DualKind::Alternation, right) => match (left.deref(), right.deref()) {
                     (Rule::Ref(_), Rule::Ref(_)) => assert!(true),
                     _ => assert!(false)
                 },
@@ -360,9 +360,9 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, util
         }
 
         match tree_4 {
-            Rule::Exception(a, b) => match (a.deref(), b.deref()) {
-                (Rule::Grouping(sub1), Rule::Grouping(sub2)) => match (sub1.deref(), sub2.deref()) {
-                    (Rule::Alternation(left, right), Rule::Ref(_)) => match (left.deref(), right.deref()) {
+            Rule::Dual(a, DualKind::Exception, b) => match (a.deref(), b.deref()) {
+                (Rule::Single(sub1, SingleKind::Grouping), Rule::Single(sub2, SingleKind::Grouping)) => match (sub1.deref(), sub2.deref()) {
+                    (Rule::Dual(left, DualKind::Alternation, right), Rule::Ref(_)) => match (left.deref(), right.deref()) {
                         (Rule::Ref(_), Rule::Ref(_)) => assert!(true),
                         _ => assert!(false),
                     },
@@ -374,9 +374,9 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, util
         }
 
         match tree_5 {
-           Rule::Alternation(left, other) => match (left.deref(), other.deref()) {
-            (Rule::Literal(_), Rule::Grouping(right)) => match right.deref() {
-                Rule::Alternation(_, _) => assert!(true),
+           Rule::Dual(left, DualKind::Alternation, other) => match (left.deref(), other.deref()) {
+            (Rule::Atomic(_, AtomicKind::Literal), Rule::Single(right, SingleKind::Grouping)) => match right.deref() {
+                Rule::Dual(_, DualKind::Alternation, _) => assert!(true),
                 _ => assert!(false),
             },
             _ => assert!(false),
@@ -404,24 +404,24 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, util
         let t3 = tree_without_grouping(Rc::new(tree_3));
         
         match t0.deref() {
-            Rule::Identifier(id) => assert_eq!(id, &String::from("ok")),
+            Rule::Atomic(id, AtomicKind::Identifier) => assert_eq!(id, &String::from("ok")),
             _ => assert!(false), 
         }
 
         match t1.deref() {
-            Rule::Repetition(id) => assert!(true),
+            Rule::Single(id, SingleKind::Repetition) => assert!(true),
             _ => assert!(false),
         }
         match t2.deref() {
-            Rule::Alternation(left, right) => match (left.deref(), right.deref()) {
+            Rule::Dual(left, DualKind::Alternation, right) => match (left.deref(), right.deref()) {
                 _ => assert!(true),
             },
             _ => assert!(false)
         }
 
         match t3.deref() {
-            Rule::Concatenation(left, right) => match (left.deref(), right.deref()) {
-                (Rule::Alternation(a, b), Rule::Ref(_)) => match (a.deref(), b.deref()) {
+            Rule::Dual(left, DualKind::Concatenation, right) => match (left.deref(), right.deref()) {
+                (Rule::Dual(a, DualKind::Alternation, b), Rule::Ref(_)) => match (a.deref(), b.deref()) {
                     (Rule::Ref(_), Rule::Ref(_)) => assert!(true),
                     _ => assert!(false),
                 },
@@ -466,14 +466,14 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, util
         let tree = get_pure_tree(create_definition_tree(&tokens));
         let pr1 = |v: &Rule, res: bool| -> bool {
             match v.deref() {
-                Rule::Alternation(_, _) => true,
+                Rule::Dual(_, DualKind::Alternation, _) => true,
                 _ => res
             }
         };
 
         let pr2 = |v: &Rule, res: bool| -> bool {
             match v.deref() {
-                Rule::Identifier(_) => false,
+                Rule::Atomic(_, AtomicKind::Identifier) => false,
                 _ => res
             }
         };
@@ -490,7 +490,7 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, util
         // Doesn't contain any identifier
         let res_2 = predicate_single_result(
             &tree,
-            &|v| if let Rule::Identifier(_) = v { false } else { true },
+            &|v| if let Rule::Atomic(_, AtomicKind::Identifier) = v { false } else { true },
             &|_| true,
             &pr2,
             &|v, a, b| pr2(v, a) && pr2(v, b)
@@ -505,7 +505,7 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, util
         let tokens = tokenize_rule_from_str(String::from("(ok - abc | 'def' ,  ok)"));
         let tree = get_pure_tree(create_definition_tree(&tokens));
         let check_if_id = |atom: &Rule| {
-            if let Rule::Identifier(id) = atom.deref() {
+            if let Rule::Atomic(id, AtomicKind::Identifier) = atom.deref() {
                 AssocRuleCounter::from(vec![(id.to_string(), 1)])
             } else {
                 AssocRuleCounter::from(vec![])
@@ -532,6 +532,18 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule}, ast::*, util
         let tree = get_pure_tree(create_definition_tree(&tokenize_rule_from_str(String::from("integer,'.',integer"))));
         let ref_to = Rc::new(Rule::Ref(Rc::downgrade(&tree_from)));
         let tree_res = tree_with_id_ref((&name, &tree_from), &tree);
-        let tree_expected = Rc::new(Rule::Concatenation(Rc::clone(&ref_to), Rc::new(Rule::Concatenation(Rc::new(Rule::Literal(".".to_string())), Rc::clone(&ref_to)))));
+        let tree_expected = Rc::new(
+            Rule::Dual(
+                Rc::clone(&ref_to),
+                DualKind::Concatenation,
+                Rc::new(
+                    Rule::Dual(
+                        Rc::new(Rule::Atomic(".".to_string(), AtomicKind::Literal)),
+                        DualKind::Concatenation,
+                        Rc::clone(&ref_to)
+                    )
+                )
+            )
+        );
         assert!(are_same_tree(&tree_res, &tree_expected, true, true));
     }
