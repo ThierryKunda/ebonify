@@ -133,7 +133,7 @@ impl EbnfTree {
     
     pub fn update_identified_counts(&mut self) {
         let check_if_id = |atom: &Rule| {
-            if let Rule::Identifier(id) = atom.deref() {
+            if let Rule::Atomic(id, AtomicKind::Identifier) = atom.deref() {
                 AssocRuleCounter::from(vec![(id.to_string(), 1)])
             } else {
                 AssocRuleCounter::from(vec![])
