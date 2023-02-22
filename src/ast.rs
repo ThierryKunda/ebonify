@@ -305,19 +305,13 @@ where
     VS: Fn(&Rule, Cnt) -> Cnt,
     VD: Fn(&Rule, Cnt, Cnt) -> Cnt {
         match rule.deref() {
-            Rule::Literal(_) |
-            Rule::Identifier(_) => count_atomic(rule.deref()),
-            Rule::Alternation(left, right) |
-            Rule::Concatenation(left, right) |
-            Rule::Exception(left, right)
-            => op_on_two_counters(
+            Rule::Atomic(_, _) => count_atomic(rule.deref()),
+            Rule::Single(sub, _) => op_on_single_counter(rule, counting_single_result(sub, count_atomic, count_ref, op_on_single_counter, op_on_two_counters)),
+            Rule::Dual(left, _, right) => op_on_two_counters(
                 rule,
                 counting_single_result(left, count_atomic, count_ref, op_on_single_counter, op_on_two_counters),
                 counting_single_result(right, count_atomic, count_ref, op_on_single_counter, op_on_two_counters)
             ),
-            Rule::Repetition(sub) |
-            Rule::Grouping(sub) |
-            Rule::Optional(sub) => op_on_single_counter(rule, counting_single_result(sub, count_atomic, count_ref, op_on_single_counter, op_on_two_counters)),
             Rule::Ref(r) => op_on_single_counter(rule, count_ref(r))
         }
     }
