@@ -46,16 +46,19 @@ pub fn rule_from_json(rule_json: Value) -> Rc<Rule> {
                     m.get(&String::from("right"))
                 ) {
                     match single.as_str() {
-                        "alternation" => return Rc::new(Rule::Alternation(
+                        "alternation" => return Rc::new(Rule::Dual(
                             rule_from_json(left.clone()),
+                            DualKind::Alternation,
                             rule_from_json(right.clone())
                         )),
-                        "concatenation" => return Rc::new(Rule::Concatenation(
+                        "concatenation" => return Rc::new(Rule::Dual(
                             rule_from_json(left.clone()),
+                            DualKind::Concatenation,
                             rule_from_json(right.clone())
                         )),
-                        "exception" => return Rc::new(Rule::Exception(
+                        "exception" => return Rc::new(Rule::Dual(
                             rule_from_json(left.clone()),
+                            DualKind::Exception,
                             rule_from_json(right.clone())
                         )),
                         _ => (),
@@ -65,14 +68,14 @@ pub fn rule_from_json(rule_json: Value) -> Rc<Rule> {
             }
         } else if let (Some(Value::String(dual)), Some(v)) = (obj.get(&String::from("node")), obj.get(&String::from("v"))) {
             match dual.as_str() {
-                "repetition" => return Rc::new(Rule::Repetition(rule_from_json(v.clone()))),
-                "grouping" => return Rc::new(Rule::Repetition(rule_from_json(v.clone()))),
-                "optional" => return Rc::new(Rule::Repetition(rule_from_json(v.clone()))),
+                "repetition" => return Rc::new(Rule::Single(rule_from_json(v.clone()), SingleKind::Repetition)),
+                "grouping" => return Rc::new(Rule::Single(rule_from_json(v.clone()), SingleKind::Repetition)),
+                "optional" => return Rc::new(Rule::Single(rule_from_json(v.clone()), SingleKind::Optional)),
                 _ => (),
             }
         }
     }
-    return Rc::new(Rule::Identifier(String::from("")));
+    return Rc::new(Rule::Atomic(String::from(""), AtomicKind::Identifier));
 }
 
 pub fn grammarize_repetition(rule: &Rc<Rule>) -> Rc<Rule> {
