@@ -12,18 +12,32 @@ pub enum Operator {
     GroupingL,
     GroupingR,
 }
+ #[derive(Debug)]
+pub enum AtomicKind {
+    Literal,
+    Identifier,
+}
+
+#[derive(Debug)]
+pub enum SingleKind {
+    Repetition,
+    Grouping,
+    Optional,
+}
+
+#[derive(Debug)]
+pub enum DualKind {
+    Alternation,
+    Concatenation,
+    Exception,
+}
 
 #[derive(Debug)]
 pub enum Rule {
-    Literal(String),
-    Identifier(String),
+    Atomic(String, AtomicKind),
     Ref(Weak<Rule>),
-    Alternation(Rc<Rule>, Rc<Rule>),
-    Concatenation(Rc<Rule>, Rc<Rule>),
-    Exception(Rc<Rule>, Rc<Rule>),
-    Optional(Rc<Rule>),
-    Repetition(Rc<Rule>),
-    Grouping(Rc<Rule>),
+    Single(Rc<Rule>, SingleKind),
+    Dual(Rc<Rule>, DualKind, Rc<Rule>),
 }
 
 #[derive(Debug)]
@@ -58,19 +72,4 @@ fn println_shift(txt: &str, shift: u8) {
         print!("  ");
     }
     println!("{}", txt);
-}
-
-impl Rule {
-    pub fn show(&self) {
-        match self {
-            Rule::Literal(lit) => {
-                print!("\"{}\"", lit);
-            },
-            Rule::Identifier(lit) => {
-                print!("{}", lit);
-            },
-            _ => (),
-        }
-            
-    }
 }
