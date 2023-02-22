@@ -194,51 +194,46 @@ pub fn get_pure_tree(rule: Rc<Rule>) -> Rc<Rule> {
 
 pub fn are_same_tree<'a>(rule_1: &'a Rule, rule_2: &'a Rule, leaves_compared: bool, deep: bool) -> bool {
     match (rule_1, rule_2) {
-        (
-            Rule::Literal(s1),
-            Rule::Literal(s2),
-        ) |
-        (
-            Rule::Identifier(s1),
-            Rule::Identifier(s2),
-        ) => if leaves_compared { s1 == s2 } else { true },
-        (
-            Rule::Repetition(el1),
-            Rule::Repetition(el2),
-        ) |
-        (
-            Rule::Grouping(el1),
-            Rule::Grouping(el2),
-        ) |
-        (
-            Rule::Optional(el1),
-            Rule::Optional(el2),
-        ) => are_same_tree(el1, el2, leaves_compared, deep),
-        (
-            Rule::Alternation(sub_1, sub_2),
-            Rule::Alternation(sub_3, sub_4),
-        ) |
-        (
-            Rule::Concatenation(sub_1, sub_2),
-            Rule::Concatenation(sub_3, sub_4),
-        )
-        |
-        (
-            Rule::Exception(sub_1, sub_2),
-            Rule::Exception(sub_3, sub_4),
-        ) => are_same_tree(sub_1, sub_3, leaves_compared, deep) && are_same_tree(sub_2, sub_4, leaves_compared, deep),
+        (Rule::Atomic(s1, k1), Rule::Atomic(s2, k2)) => if leaves_compared { s1 == s2 && same_atomic_kind(k1, k2) } else { true },
+        (Rule::Single(sub1, k1), Rule::Single(sub2, k2)) => are_same_tree(sub1, sub2, leaves_compared, deep),
+        (Rule::Dual(left1, k1, right1), Rule::Dual(left2, k2, right2)) => are_same_tree(left1, left1, leaves_compared, deep)
+            && are_same_tree(right1, right2, leaves_compared, deep),
         (Rule::Ref(r1), Rule::Ref(r2)) => if !deep { true } else {
             match (r1.upgrade(), r2.upgrade()) {
                 (None, None) => true,
                 (Some(sub_1), Some(sub_2)) => are_same_tree(sub_1.deref(), sub_2.deref(), leaves_compared, deep),
                 _ => false,
             }
-        }
+        },
         _ => false,
     }
 }
 
+pub fn same_atomic_kind(k1: &AtomicKind, k2: &AtomicKind) -> bool {
+    match (k1, k2) {
+        (AtomicKind::Literal, AtomicKind::Literal) => true,
+        (AtomicKind::Identifier, AtomicKind::Identifier) => true,
+        _ => false,
+    }
+}
 
+pub fn same_single_kind(k1: &SingleKind, k2: &SingleKind) -> bool {
+    match (k1, k2) {
+        (SingleKind::Repetition, SingleKind::Repetition) => true,
+        (SingleKind::Grouping, SingleKind::Grouping) => true,
+        (SingleKind::Optional, SingleKind::Optional) => true,
+        _ => false,
+    }
+}
+
+pub fn same_dual_kind(k1: &DualKind, k2: &DualKind) -> bool {
+    match (k1, k2) {
+        (DualKind::Alternation, DualKind::Alternation) => true,
+        (DualKind::Concatenation, DualKind::Concatenation) => true,
+        (DualKind::Exception, DualKind::Exception) => true,
+        _ => false,
+    }
+}
 
 pub fn create_definition_tree<'a>(rule: &'a Vec<Token>) -> Rc<Rule> {
     let rule_tree = create_rule_tree(rule);
