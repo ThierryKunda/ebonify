@@ -357,37 +357,37 @@ pub fn create_rule_tree_by_ref(rule: Vec<&Token>) -> Rule {
     if rule.len() == 1 {
         match rule.first().unwrap() {
             Token::Rl(rl) => match rl.deref() {
-                Rule::Literal(lit) => return Rule::Literal(lit.to_string()),
-                Rule::Identifier(id) => return Rule::Identifier(id.to_string()),
-                _ => return Rule::Identifier("Invalid".to_string()),
+                Rule::Atomic(lit, AtomicKind::Literal) => return Rule::Atomic(lit.to_string(), AtomicKind::Literal),
+                Rule::Atomic(id, AtomicKind::Identifier) => return Rule::Atomic(id.to_string(), AtomicKind::Identifier),
+                _ => return Rule::Atomic("Invalid".to_string(), AtomicKind::Identifier),
             },
-            _ => return Rule::Identifier("Invalid".to_string()),
+            _ => return Rule::Atomic("Invalid".to_string(), AtomicKind::Identifier),
         };
     }
     if rule.len() == 3 {
         match (rule.first().unwrap(), rule.get(1).unwrap(), rule.last().unwrap()) {
             (Token::Op(op1), Token::Rl(rl), Token::Op(_)) => match op1 {
-                Operator::OptionalL => return Rule::Optional(Rc::new(Rule::Ref(Rc::downgrade(rl)))),
-                Operator::RepetitionL => return Rule::Repetition(Rc::new(Rule::Ref(Rc::downgrade(rl)))),
-                Operator::GroupingL => return Rule::Grouping(Rc::new(Rule::Ref(Rc::downgrade(rl)))),
-                _ => return Rule::Identifier("Invalid".to_string()),
+                Operator::OptionalL => return Rule::Single(Rc::new(Rule::Ref(Rc::downgrade(rl))), SingleKind::Optional),
+                Operator::RepetitionL => return Rule::Single(Rc::new(Rule::Ref(Rc::downgrade(rl))), SingleKind::Repetition),
+                Operator::GroupingL => return Rule::Single(Rc::new(Rule::Ref(Rc::downgrade(rl))), SingleKind::Grouping),
+                _ => return Rule::Atomic("Invalid".to_string(), AtomicKind::Identifier),
             },
             (Token::Rl(rl1), Token::Op(op), Token::Rl(rl2)) => match op {
-                Operator::Alternation => return Rule::Alternation(Rc::new(Rule::Ref(Rc::downgrade(rl1))), Rc::new(Rule::Ref(Rc::downgrade(rl2)))),
-                Operator::Concatenation => return Rule::Concatenation(Rc::new(Rule::Ref(Rc::downgrade(rl1))), Rc::new(Rule::Ref(Rc::downgrade(rl2)))),
-                Operator::Exception => return Rule::Exception(Rc::new(Rule::Ref(Rc::downgrade(rl1))), Rc::new(Rule::Ref(Rc::downgrade(rl2)))),
-                _ => return Rule::Identifier("Invalid".to_string()),
+                Operator::Alternation => return Rule::Dual(Rc::new(Rule::Ref(Rc::downgrade(rl1))), DualKind::Alternation, Rc::new(Rule::Ref(Rc::downgrade(rl2)))),
+                Operator::Concatenation => return Rule::Dual(Rc::new(Rule::Ref(Rc::downgrade(rl1))), DualKind::Concatenation, Rc::new(Rule::Ref(Rc::downgrade(rl2)))),
+                Operator::Exception => return Rule::Dual(Rc::new(Rule::Ref(Rc::downgrade(rl1))), DualKind::Exception, Rc::new(Rule::Ref(Rc::downgrade(rl2)))),
+                _ => return Rule::Atomic("Invalid".to_string(), AtomicKind::Identifier),
             },
             
-            _ => return Rule::Identifier("Invalid".to_string()),
+            _ => return Rule::Atomic("Invalid".to_string(), AtomicKind::Identifier),
         };
     }
     if least_prior_is_unary(&rule) {
         match rule.first().unwrap() {
-            Token::Op(Operator::RepetitionL) => return Rule::Repetition(Rc::new(create_rule_tree_by_ref(get_rule_without_first_last(rule)))),
-            Token::Op(Operator::OptionalL) => return Rule::Optional(Rc::new(create_rule_tree_by_ref(get_rule_without_first_last(rule)))),
-            Token::Op(Operator::GroupingL) => return Rule::Grouping(Rc::new(create_rule_tree_by_ref(get_rule_without_first_last(rule)))),
-            _ => Rule::Identifier("Invalid".to_string()),
+            Token::Op(Operator::RepetitionL) => return Rule::Single(Rc::new(create_rule_tree_by_ref(get_rule_without_first_last(rule))), SingleKind::Repetition),
+            Token::Op(Operator::OptionalL) => return Rule::Single(Rc::new(create_rule_tree_by_ref(get_rule_without_first_last(rule))), SingleKind::Optional),
+            Token::Op(Operator::GroupingL) => return Rule::Single(Rc::new(create_rule_tree_by_ref(get_rule_without_first_last(rule))), SingleKind::Grouping),
+            _ => Rule::Atomic("Invalid".to_string(), AtomicKind::Identifier),
         };
     }
     let i = get_least_prior_binary_index(&rule);
@@ -396,15 +396,15 @@ pub fn create_rule_tree_by_ref(rule: Vec<&Token>) -> Rule {
             let el = *rule.get(idx).unwrap();
             let (left_part, right_part) = split_rule_by_index(&rule, idx);
             match el {
-                Token::Op(Operator::Alternation) => return Rule::Alternation(Rc::new(create_rule_tree_by_ref(left_part)), Rc::new(create_rule_tree_by_ref(right_part))),
-                Token::Op(Operator::Concatenation) => return Rule::Concatenation(Rc::new(create_rule_tree_by_ref(left_part)), Rc::new(create_rule_tree_by_ref(right_part))),
-                Token::Op(Operator::Exception) => return Rule::Exception(Rc::new(create_rule_tree_by_ref(left_part)), Rc::new(create_rule_tree_by_ref(right_part))),
-                _ => return Rule::Identifier("Invalid".to_string()),
+                Token::Op(Operator::Alternation) => return Rule::Dual(Rc::new(create_rule_tree_by_ref(left_part)), DualKind::Alternation, Rc::new(create_rule_tree_by_ref(right_part))),
+                Token::Op(Operator::Concatenation) => return Rule::Dual(Rc::new(create_rule_tree_by_ref(left_part)), DualKind::Concatenation, Rc::new(create_rule_tree_by_ref(right_part))),
+                Token::Op(Operator::Exception) => return Rule::Dual(Rc::new(create_rule_tree_by_ref(left_part)), DualKind::Exception, Rc::new(create_rule_tree_by_ref(right_part))),
+                _ => return Rule::Atomic("Invalid".to_string(), AtomicKind::Identifier),
             }
         }
-        None => Rule::Identifier("Invalid".to_string()),
+        None => Rule::Atomic("Invalid".to_string(), AtomicKind::Identifier),
     };
-    Rule::Identifier("Invalid".to_string())
+    Rule::Atomic("Invalid".to_string(), AtomicKind::Identifier)
 }
 
 pub fn with_priority_parentheses<'a>(rule: Vec<&'a Token>) -> Vec<&'a Token> {
