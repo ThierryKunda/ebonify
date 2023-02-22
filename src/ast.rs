@@ -247,35 +247,12 @@ pub fn create_definition_tree<'a>(rule: &'a Vec<Token>) -> Rc<Rule> {
 
 pub fn tree_without_grouping(rule: Rc<Rule>) -> Rc<Rule> {
     match rule.deref() {
-        Rule::Literal(_) | Rule::Identifier(_) | Rule::Ref(_) => Rc::clone(&rule),
-        Rule::Repetition(sub_tree) => Rc::new(
-            Rule::Repetition(
-                tree_without_grouping(Rc::clone(sub_tree))
-            )
-        ),
-        Rule::Optional(sub_tree) => Rc::new(
-            Rule::Optional(
-                tree_without_grouping(Rc::clone(sub_tree))
-            )
-        ),
-        Rule::Grouping(sub_tree) => tree_without_grouping(Rc::clone(sub_tree)),
-        Rule::Concatenation(sub_1, sub_2) => Rc::new(
-            Rule::Concatenation(
-                tree_without_grouping(Rc::clone(sub_1)),
-                tree_without_grouping(Rc::clone(sub_2))
-            )
-        ),
-        Rule::Alternation(sub_1, sub_2) => Rc::new(
-            Rule::Alternation(
-                tree_without_grouping(Rc::clone(sub_1)),
-                tree_without_grouping(Rc::clone(sub_2))
-            )
-        ),
-        Rule::Exception(sub_1, sub_2) => Rc::new(
-            Rule::Exception(
-                tree_without_grouping(Rc::clone(sub_1)),
-                tree_without_grouping(Rc::clone(sub_2))
-            )
+        Rule::Atomic(_, _) | Rule::Ref(_) => Rc::clone(&rule),
+        Rule::Single(sub, kind) => Rc::new(Rule::Single(Rc::clone(sub), kind.clone())),
+        Rule::Dual(left, kind, right) => Rc::new(Rule::Dual(
+            Rc::clone(left),
+            kind.clone(),
+            Rc::clone(right))
         ),
     }
 }
