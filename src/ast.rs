@@ -329,19 +329,13 @@ pub fn predicate_single_result<PA, PR, VS, VD>(rule: &Rc<Rule>, pred_atomic: &PA
         VS: Fn(&Rule, bool) -> bool,
         VD: Fn(&Rule, bool, bool) -> bool {
     match rule.deref() {
-        Rule::Literal(_) |
-        Rule::Identifier(_) => pred_atomic(rule.deref()),
-        Rule::Alternation(left, right) |
-        Rule::Concatenation(left, right) |
-        Rule::Exception(left, right)
-        => op_on_dual_truthness(
+        Rule::Atomic(_, _) => pred_atomic(rule.deref()),
+        Rule::Single(sub, _) => op_on_single_truthness(rule, predicate_single_result(sub, pred_atomic, pred_ref, op_on_single_truthness, op_on_dual_truthness)),
+        Rule::Dual(left, _, right) => op_on_dual_truthness(
             rule,
             predicate_single_result(left, pred_atomic, pred_ref, op_on_single_truthness, op_on_dual_truthness),
             predicate_single_result(right, pred_atomic, pred_ref, op_on_single_truthness, op_on_dual_truthness)
         ),
-        Rule::Repetition(sub) |
-        Rule::Grouping(sub) |
-        Rule::Optional(sub) => op_on_single_truthness(rule, predicate_single_result(sub, pred_atomic, pred_ref, op_on_single_truthness, op_on_dual_truthness)),
         Rule::Ref(r) => op_on_single_truthness(rule, pred_ref(r))
     }
 }
