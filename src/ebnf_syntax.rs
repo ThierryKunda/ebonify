@@ -12,27 +12,27 @@ pub enum Operator {
     GroupingL,
     GroupingR,
 }
- #[derive(Debug)]
+ #[derive(Clone, Debug)]
 pub enum AtomicKind {
     Literal,
     Identifier,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum SingleKind {
     Repetition,
     Grouping,
     Optional,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum DualKind {
     Alternation,
     Concatenation,
     Exception,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Rule {
     Atomic(String, AtomicKind),
     Ref(Weak<Rule>),
