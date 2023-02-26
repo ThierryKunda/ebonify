@@ -547,3 +547,22 @@ pub fn tree_with_id_ref_test() {
     );
     assert!(are_same_tree(&tree_res, &tree_expected, true, true));
 }
+
+#[test]
+fn grammarize_repetition_test() {
+    let rule_0 = 
+        create_definition_tree(
+            &tokenize_rule_from_str(String::from("{ ok }"))
+        )
+    ;
+    let rule_a = 
+        create_definition_tree(
+            &tokenize_rule_from_str(String::from("ok | ok, same"))
+        )
+    ;
+    let gram_0 = grammarize_repetition(&rule_0);
+    println!("{:?}", gram_0);
+    println!("{:?}", rule_a);
+    let res = are_same_tree(&gram_0, &rule_a, false, false);
+    assert!(res);
+}
