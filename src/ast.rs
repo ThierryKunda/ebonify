@@ -145,10 +145,9 @@ pub fn get_pure_tree(rule: Rc<Rule>) -> Rc<Rule> {
 
 pub fn are_same_tree<'a>(rule_1: &'a Rule, rule_2: &'a Rule, leaves_compared: bool, deep: bool) -> bool {
     match (rule_1, rule_2) {
+        (Rule::Atomic(_, _), Rule::Ref(_)) |
+        (Rule::Ref(_), Rule::Atomic(_, _)) => !leaves_compared,
         (Rule::Atomic(s1, k1), Rule::Atomic(s2, k2)) => if leaves_compared { s1 == s2 && same_atomic_kind(k1, k2) } else { true },
-        (Rule::Single(sub1, k1), Rule::Single(sub2, k2)) => are_same_tree(sub1, sub2, leaves_compared, deep) && same_single_kind(k1, k2),
-        (Rule::Dual(left1, k1, right1), Rule::Dual(left2, k2, right2)) => are_same_tree(left1, left2, leaves_compared, deep)
-            && are_same_tree(right1, right2, leaves_compared, deep)  && same_dual_kind(k1, k2),
         (Rule::Ref(r1), Rule::Ref(r2)) => if !deep { true } else {
             match (r1.upgrade(), r2.upgrade()) {
                 (None, None) => true,
@@ -156,6 +155,9 @@ pub fn are_same_tree<'a>(rule_1: &'a Rule, rule_2: &'a Rule, leaves_compared: bo
                 _ => false,
             }
         },
+        (Rule::Single(sub1, k1), Rule::Single(sub2, k2)) => are_same_tree(sub1, sub2, leaves_compared, deep) && same_single_kind(k1, k2),
+        (Rule::Dual(left1, k1, right1), Rule::Dual(left2, k2, right2)) => are_same_tree(left1, left2, leaves_compared, deep)
+            && are_same_tree(right1, right2, leaves_compared, deep) && same_dual_kind(k1, k2),
         _ => false,
     }
 }
