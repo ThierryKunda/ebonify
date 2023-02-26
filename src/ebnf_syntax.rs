@@ -1,6 +1,6 @@
 use std::rc::{Rc, Weak};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Operator {
     Alternation,
     Concatenation,
@@ -40,7 +40,7 @@ pub enum Rule {
     Dual(Rc<Rule>, DualKind, Rc<Rule>),
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Token {
     Op(Operator),
     Rl(Rc<Rule>),
