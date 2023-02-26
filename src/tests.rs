@@ -39,7 +39,7 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule, AtomicKind, S
         let altern_token = tokenize(altern);
         let op_repet_token = tokenize(opening_repet);
 
-        match lit1_token {
+        match &lit1_token {
             Token::Rl(rl) => match rl.deref() {
                 Rule::Atomic(lit, AtomicKind::Literal) => assert_eq!(lit, &String::from("a")),
                 _ => assert!(false),
@@ -47,7 +47,7 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule, AtomicKind, S
             _ => assert!(false),
         }
 
-        match lit2_token {
+        match &lit2_token {
             Token::Rl(rl) => match rl.deref() {
                 Rule::Atomic(lit, AtomicKind::Literal) => assert_eq!(lit, &String::from("a")),
                 _ => assert!(false),
@@ -442,7 +442,7 @@ use crate::{pre_treatment::*, ebnf_syntax::{Token, Operator, Rule, AtomicKind, S
         let tokens_b = tokenize_rule_from_str(String::from("{ yes }"));
         let tokens_c = tokenize_rule_from_str(String::from("('abc'|'def')"));
         let tokens_d = tokenize_rule_from_str(String::from("(foo|bar)-var"));
-
+        
         let tree_0 = create_rule_tree(&tokens_0);
         let tree_1 = create_rule_tree(&tokens_1);
         let tree_2 = create_rule_tree(&tokens_2);
