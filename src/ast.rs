@@ -131,7 +131,7 @@ pub fn get_pure_tree(rule: Rc<Rule>) -> Rc<Rule> {
         ),
         Rule::Dual(left, kind, right) => Rc::new(
           Rule::Dual(
-            get_pure_tree(Rc::clone(left)), kind.clone(), get_pure_tree(Rc::clone(left)))  
+            get_pure_tree(Rc::clone(left)), kind.clone(), get_pure_tree(Rc::clone(right)))  
         ),
         Rule::Ref(r) => match r.upgrade() {
             Some(sub) => match sub.deref() {
@@ -194,11 +194,15 @@ pub fn create_definition_tree<'a>(rule: &'a Vec<Token>) -> Rc<Rule> {
 pub fn tree_without_grouping(rule: Rc<Rule>) -> Rc<Rule> {
     match rule.deref() {
         Rule::Atomic(_, _) | Rule::Ref(_) => Rc::clone(&rule),
-        Rule::Single(sub, kind) => Rc::new(Rule::Single(Rc::clone(sub), kind.clone())),
+        Rule::Single(sub, SingleKind::Grouping) => tree_without_grouping(Rc::clone(sub)),
+        Rule::Single(sub, kind) => Rc::new(Rule::Single(
+            tree_without_grouping(Rc::clone(sub)),
+            kind.clone())
+        ),
         Rule::Dual(left, kind, right) => Rc::new(Rule::Dual(
-            Rc::clone(left),
+            tree_without_grouping(Rc::clone(left)),
             kind.clone(),
-            Rc::clone(right))
+            tree_without_grouping(Rc::clone(right)))
         ),
     }
 }
@@ -264,8 +268,7 @@ pub fn create_rule_tree_by_ref(rule: Vec<&Token>) -> Rule {
     if rule.len() == 1 {
         match rule.first().unwrap() {
             Token::Rl(rl) => match rl.deref() {
-                Rule::Atomic(lit, AtomicKind::Literal) => return Rule::Atomic(lit.to_string(), AtomicKind::Literal),
-                Rule::Atomic(id, AtomicKind::Identifier) => return Rule::Atomic(id.to_string(), AtomicKind::Identifier),
+                Rule::Atomic(s, kind) => return Rule::Atomic(s.to_string(), kind.clone()),
                 _ => return Rule::Atomic("Invalid".to_string(), AtomicKind::Identifier),
             },
             _ => return Rule::Atomic("Invalid".to_string(), AtomicKind::Identifier),
