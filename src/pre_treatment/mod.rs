@@ -1,3 +1,8 @@
+#[cfg(test)]
+mod tests;
+
+use crate::ebnf_syntax::{Operator, Token};
+
 use regex;
 use std::fs;
 use std::ops::Deref;
@@ -116,14 +121,6 @@ pub fn brackets_paired(operator1: &Operator, operator2: &Operator) -> bool {
         (Operator::RepetitionL, Operator::RepetitionR) => true,
         _ => false,
         
-    }
-}
-pub fn is_binary(operator: &Operator) -> bool {
-    match operator {
-        Operator::Alternation => true,
-        Operator::Concatenation => true,
-        Operator::Exception => true,
-        _ => false
     }
 }
 
@@ -303,4 +300,58 @@ pub fn rules_equals(rule1: &Vec<&Token>, rule2: &Vec<&Token>) -> bool {
         };
     }
     true
+}
+
+pub fn valid_dual_ref_operators(rule: &Vec<&Token>) -> bool {
+    let mut operators_list: Vec<&Operator> = Vec::new();
+    for token in rule {
+        match token {
+            Token::Op(op) => match op {
+                Operator::OptionalL => operators_list.push(op),
+                Operator::OptionalR => operators_list.push(op),
+                Operator::RepetitionL => operators_list.push(op),
+                Operator::RepetitionR => operators_list.push(op),
+                Operator::GroupingL => operators_list.push(op),
+                Operator::GroupingR => operators_list.push(op),
+                _ => ()
+            },
+            _ => (),
+        }
+    }
+    let mut operators_test: Vec<&Operator> = Vec::new();
+    match operators_list.first() {
+        Some(v) => operators_test.push(v),
+        None => return true,
+    }
+    let mut current_op: Option<&&Operator>;
+    let mut last_test_op: Option<&&Operator>;
+    let size = operators_list.len();
+    for i in 1..size {
+        current_op = operators_list.get(i);
+        last_test_op = operators_test.last();
+        match (last_test_op, current_op) {
+            (Some(op1), Some(op2)) => {
+                if brackets_paired(op1, op2) {
+                    operators_test.pop();
+                } else {
+                    let o = *op2;
+                    operators_test.push(o);
+                }
+            },
+            (None, Some(op2)) => {
+                let o = *op2;
+                operators_test.push(o)
+            },
+            (_, None) => return operators_test.len() == 0,
+        }
+    }
+operators_test.len() == 0
+}
+
+pub fn tokens_as_ref(rule: &Vec<Token>) -> Vec<&Token> {
+    let mut tokens: Vec<&Token> = Vec::new();
+    for tk in rule {
+        tokens.push(tk);
+    }
+    tokens
 }
