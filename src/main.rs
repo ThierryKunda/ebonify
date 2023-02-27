@@ -6,7 +6,7 @@ mod structure;
 mod utils;
 mod cli;
 use clap::Parser;
-use structure::EbnfTree;
+// use structure::EbnfTree;
 
 fn main() {
     let cli = crate::cli::Cli::parse();
