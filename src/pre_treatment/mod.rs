@@ -52,7 +52,7 @@ pub fn split_members(rules: Vec<String>) -> Vec<(String, String)> {
     members
 }
 
-pub fn tokenize(token: String) -> Token {
+fn tokenize(token: String) -> Token {
     let token_as_str = token.as_str();
     match token_as_str {
         "," => Token::Op(Operator::Concatenation),
