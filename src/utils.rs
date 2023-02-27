@@ -245,3 +245,12 @@ impl Counter<String, usize> for AssocRuleCounter {
         }
     }
 }
+
+pub fn diff_str(s1: &String, s2: &String) -> String {
+    s1
+    .chars()
+    .filter(|c| !s2.contains(
+        c.to_string().as_str()
+    ))
+    .collect()
+}
