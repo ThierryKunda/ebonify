@@ -2,11 +2,87 @@ use std::ops::Deref;
 use std::rc::{Rc, Weak};
 
 use crate::pre_treatment::{tokenize_rule_from_str, split_members, tokens_as_ref};
-use crate::utils::{AssocRuleCounter, Counter};
+use crate::utils::{Counter, diff_str};
 
 use crate::ebnf_syntax::*;
 
 use super::tokens::*;
+
+pub fn grammarize_exception(rule: &Rc<Rule>) -> Rc<Rule> {
+    match rule.deref() {
+        Rule::Atomic(_,_) | Rule::Ref(_) => Rc::clone(rule),
+        Rule::Single(sub, kind) => Rc::new(Rule::Single(
+            grammarize_exception(sub),
+            kind.clone() 
+        )),
+        Rule::Dual(left, DualKind::Exception, right) => match (left.deref(), right.deref()) {
+            // Exception between two literals
+            (Rule::Atomic(s1, AtomicKind::Literal), Rule::Atomic(s2, AtomicKind::Literal)) => Rc::new(Rule::Atomic(
+                diff_str(s1, s2),
+                AtomicKind::Literal
+            )),
+            // Exception between any atomic-kind rules
+            (Rule::Atomic(s1, k1), Rule::Atomic(s2, k2)) => Rc::new(Rule::Dual(
+                Rc::new(Rule::Atomic(s1.to_string(), k1.clone())),
+                DualKind::Exception,
+                Rc::new(Rule::Atomic(s2.to_string(), k2.clone()))
+            )),
+            // Exception between a ref and another rule (or vice-versa)
+            (Rule::Ref(_), _) | (_, Rule::Ref(_)) => Rc::new(Rule::Dual(
+                Rc::clone(left), 
+                DualKind::Exception,
+                Rc::clone(right) 
+            )),
+            // gram(a - (b . c)) -> gram(a - b) . gram(a - c)
+            (_, Rule::Dual(b, knd, c)) => Rc::new(Rule::Dual(
+                grammarize_exception(&Rc::new(Rule::Dual(Rc::clone(left), DualKind::Exception, Rc::clone(b)))), 
+                knd.clone(),
+                grammarize_exception(&Rc::new(Rule::Dual(Rc::clone(left), DualKind::Exception, Rc::clone(c))))
+            )),
+            // gram((a . b) - c) -> gram(a - c) . gram(b - c)
+            (Rule::Dual(a, knd, b), _) => Rc::new(Rule::Dual(
+                grammarize_exception(&Rc::new(Rule::Dual(Rc::clone(a), DualKind::Exception, Rc::clone(right)))),
+                knd.clone(),
+                grammarize_exception(&Rc::new(Rule::Dual(Rc::clone(b), DualKind::Exception, Rc::clone(right))))
+            )),
+            // gram(<a> - <b>) -> gram(<a - b>)
+            (Rule::Single(sub1, knd1), Rule::Single(sub2, knd2)) => if same_single_kind(knd1, knd2) {
+                grammarize_exception(
+                    &Rc::new(Rule::Single(
+                            Rc::new(
+                                Rule::Dual(Rc::clone(sub1), DualKind::Exception, Rc::clone(sub2))
+                            ), 
+                            knd1.clone()
+                        ),
+                    ),
+                )
+            } else {
+            // gram(<a> - ?b?) -> gram(<a - ?b?>)
+            grammarize_exception(
+                &Rc::new(Rule::Single(
+                        Rc::new(
+                            Rule::Dual(Rc::clone(sub1), DualKind::Exception, Rc::new(
+                                Rule::Single(Rc::clone(sub2), knd2.clone())
+                            ))
+                        ), 
+                        knd1.clone()
+                    ),
+                ),
+            )
+            },
+            _ => Rc::new(Rule::Dual(
+                grammarize_exception(left),
+                DualKind::Exception,
+                grammarize_exception(right)
+            ))
+        },
+        Rule::Dual(left, kind, right) => Rc::new(Rule::Dual(
+            grammarize_exception(left), 
+            kind.clone(),
+            grammarize_exception(right) 
+        )),
+    }
+} 
 
 pub fn grammarize_repetition(rule: &Rc<Rule>) -> Rc<Rule> {
     match rule.deref() {
@@ -31,7 +107,6 @@ pub fn grammarize_repetition(rule: &Rc<Rule>) -> Rc<Rule> {
         ))
     }
 }
-
 
 pub fn tree_with_id_ref(name_def_pair: (&String, &Rc<Rule>), rule_to_transform: &Rc<Rule>) -> Rc<Rule> {
     match rule_to_transform.deref() {
