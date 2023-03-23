@@ -45,12 +45,14 @@ pub fn with_priority_parentheses<'a>(rule: Vec<&'a Token>) -> Vec<&'a Token> {
             *rule.get(3).unwrap(),
             *rule.get(4).unwrap()
         );
-        match (first, third, last) {
+        match (first, second, third, fourth, last) {
+            // with_priority_parentheses(<_0 <_1 a 1_> 0_>) -> <_0 with_priority_parentheses(<_1 a 1_>) 0_>
+            (Token::Op(_), Token::Op(_), Token::Rl(_), Token::Op(_), Token::Op(_)) => rule,
             // with_priority_parentheses(< a . b >) -> < a . b >
-            (Token::Op(_), Token::Op(_), Token::Op(_)) => rule,
+            (Token::Op(_), _, Token::Op(_), _, Token::Op(_)) => rule,
             // with_priority_parentheses(a . b * c) -> ( a . b ) * c if . >> *
             //                                         a . ( b * c ) else
-            (Token::Rl(_), Token::Rl(_), Token::Rl(_)) => match (second, fourth) {
+            (Token::Rl(_), _, Token::Rl(_), _, Token::Rl(_)) => match (second, fourth) {
                     (Token::Op(op1), Token::Op(op2)) => if has_highter_priority_to(op1, op2) {
                         concat_rules(
                             surround_with_grouping(vec![first, second, third]),
@@ -69,8 +71,8 @@ pub fn with_priority_parentheses<'a>(rule: Vec<&'a Token>) -> Vec<&'a Token> {
             // < a > . b -> < a > . b 
             // OR
             // a . < b > -> a . < b >
-            (Token::Op(_), Token::Op(_), Token::Rl(_)) |
-            (Token::Rl(_), Token::Op(_), Token::Op(_)) => rule,
+            (Token::Op(_), _, Token::Op(_), _, Token::Rl(_)) |
+            (Token::Rl(_), _, Token::Op(_), _, Token::Op(_)) => rule,
             _ => vec![&Token::Invalid]
         }
     } else {
