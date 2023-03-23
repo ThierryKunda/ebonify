@@ -495,3 +495,53 @@ fn grammarize_exception_test() {
     assert!(res_1);
     assert!(res_2);
 }
+
+
+#[test]
+fn grammarize_optional_test() {
+    let rule_0 =
+        get_pure_tree(create_definition_tree(
+            &tokenize_rule_from_str(String::from("ok , [fine]"))
+        ))
+    ;
+    let rule_1 =
+        get_pure_tree(create_definition_tree(
+            &tokenize_rule_from_str(String::from("[yes] - [no]"))
+        ))
+    ;
+    let rule_2 =
+        get_pure_tree(create_definition_tree(
+            &tokenize_rule_from_str(String::from("[ yes ] - no"))
+        ))
+    ;
+
+    let rule_a =
+    get_pure_tree(create_definition_tree(
+        &tokenize_rule_from_str(String::from("ok | (ok , fine)"))
+    ))
+    ;
+    let rule_b =
+    get_pure_tree(create_definition_tree(
+        &tokenize_rule_from_str(String::from("yes | no | (yes - no)"))
+    ))
+    ;  
+    let rule_c =
+    get_pure_tree(create_definition_tree(
+        &tokenize_rule_from_str(String::from(" '' | (yes - no)"))
+    ))
+    ;
+
+    let gram_0 = grammarize_optional(&rule_0);
+    let gram_1 = grammarize_optional(&rule_1);
+    let gram_2 = grammarize_optional(&rule_2);
+    println!("{:?}", gram_0);
+    println!("{:?}", gram_1);
+    println!("{:?}", gram_2);
+
+    let res_0 = are_same_tree(&gram_0, &rule_a, false, false);
+    let res_1 = are_same_tree(&gram_1, &rule_b, false, false);
+    let res_2 = are_same_tree(&gram_2, &rule_c, false, false);
+    assert!(res_0);
+    assert!(res_1);
+    assert!(res_2);
+}
