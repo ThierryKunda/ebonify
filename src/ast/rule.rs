@@ -8,6 +8,70 @@ use crate::ebnf_syntax::*;
 
 use super::tokens::*;
 
+pub fn grammarize_optional(rule: &Rc<Rule>) -> Rc<Rule> {
+    match rule.deref() {
+        Rule::Atomic(_, _) | Rule::Ref(_) => Rc::clone(rule),
+        // gram(<a>) -> <gram(a)>
+        Rule::Single(sub, kind) => Rc::new(Rule::Single(
+            grammarize_optional(sub),
+            kind.clone()
+        )),
+        Rule::Dual(left, kind, right) => match (left.deref(), right.deref()) {
+            // gram([a] . [b]) -> gram(a) | gram(b) | (gram(a) . gram(b))
+            (Rule::Single(sub1, SingleKind::Optional), Rule::Single(sub2, SingleKind::Optional)) => Rc::new(Rule::Dual(
+                grammarize_optional(sub1),
+                DualKind::Alternation,
+                Rc::new(Rule::Dual(
+                    grammarize_optional(sub2), 
+                    DualKind::Alternation, 
+                    Rc::new(Rule::Dual(
+                        grammarize_optional(sub1), 
+                        kind.clone(), 
+                        grammarize_optional(sub2)
+                    ))
+                ))
+            )),
+            // gram(a . [b]) -> gram(a) | (gram(a) . gram(b))
+            (_, Rule::Single(sub, SingleKind::Optional)) => Rc::new(Rule::Dual(
+                grammarize_optional(left),
+                DualKind::Alternation,
+                Rc::new(Rule::Dual(
+                    grammarize_optional(left), 
+                    kind.clone(), 
+                    grammarize_optional(sub)
+                )))),
+            // gram([a] . b)
+            (Rule::Single(sub, SingleKind::Optional), _) => if let DualKind::Exception = kind {
+                // gram([a] - b) -> "" | gram(a) - gram(b) if . is -
+                Rc::new(Rule::Dual(
+                    Rc::new(Rule::Atomic(String::from(""), AtomicKind::Literal)),
+                    DualKind::Alternation,
+                    Rc::new(Rule::Dual(
+                        grammarize_optional(sub),
+                        kind.clone(),
+                        grammarize_optional(right)
+                    ))))
+            } else {
+                // gram([a] . b) -> gram(b) | gram(a) . gram(b) else
+                Rc::new(Rule::Dual(
+                    grammarize_optional(right),
+                    DualKind::Alternation,
+                    Rc::new(Rule::Dual(
+                        grammarize_optional(sub), 
+                        kind.clone(), 
+                        grammarize_optional(right)
+                    ))))
+            },
+            // gram(a . b) -> gram(a) . gram(b)
+            _ => Rc::new(Rule::Dual(
+                grammarize_optional(left),
+                kind.clone(),
+                grammarize_optional(right)
+            ))
+        }
+    }
+}
+
 pub fn grammarize_exception(rule: &Rc<Rule>) -> Rc<Rule> {
     match rule.deref() {
         Rule::Atomic(_,_) | Rule::Ref(_) => Rc::clone(rule),
