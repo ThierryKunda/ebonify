@@ -1,6 +1,6 @@
 use std::rc::Rc;
 use super::tree::EbnfTree;
-use crate::ebnf_syntax::Rule;
+use crate::ebnf_syntax::{Rule, AtomicKind};
 
 enum ParsingStatus {
     BeforeStarting,
@@ -12,7 +12,7 @@ enum ParsingStatus {
 struct Parser<'a> {
     tree: &'a EbnfTree,
     string_to_match: String,
-    stack: Vec<String>,
+    stack: Vec<Rc<Rule>>,
     status: ParsingStatus
 }
 
@@ -23,7 +23,7 @@ impl<'a> Parser<'a> {
             string_to_match: string_to_match.clone(),
             stack: string_to_match
                 .chars()
-                .map(|c| c.to_string())
+                .map(|c| Rc::new(Rule::Atomic(c.to_string(), AtomicKind::Literal)))
                 .collect(),
             status: ParsingStatus::BeforeStarting
         }
