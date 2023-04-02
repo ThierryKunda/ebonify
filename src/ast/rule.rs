@@ -72,11 +72,57 @@ pub fn grammarize_optional(rule: &Rc<Rule>) -> Rc<Rule> {
     }
 }
 
-pub fn grammarize_exception(rule: &Rc<Rule>) -> Rc<Rule> {
+fn grammarize_exc_asc(rule: &Rc<Rule>) -> Rc<Rule> {
+
+    match rule.deref() {
+        Rule::Atomic(_,_) | Rule::Ref(_) => Rc::clone(rule),
+        Rule::Dual(left, kind, right) => match (left.deref(), kind, right.deref()) {
+            (
+                Rule::Atomic(txt1, AtomicKind::Literal),
+                DualKind::Exception,
+                Rule::Atomic(txt2, AtomicKind::Literal)
+            ) => Rc::new(Rule::Atomic(diff_str(txt1, txt2), AtomicKind::Literal)),
+            (
+                Rule::Atomic(txt1, AtomicKind::Literal),
+                DualKind::Concatenation,
+                Rule::Atomic(txt2, AtomicKind::Literal)
+            ) => Rc::new(Rule::Atomic(txt1.clone()+txt2, AtomicKind::Literal)),
+            _ => {
+                let gram_r1 = grammarize_exc_asc(left);
+                let gram_r2 = grammarize_exc_asc(right);
+                match (gram_r1.deref(), kind, gram_r2.deref()) {
+                    (
+                        Rule::Atomic(s1, AtomicKind::Literal),
+                        DualKind::Exception,
+                        Rule::Atomic(s2, AtomicKind::Literal)
+                    ) => Rc::new(Rule::Atomic(
+                        diff_str(s1, s2),
+                        AtomicKind::Literal
+                    )),
+                    (
+                        Rule::Atomic(s1, AtomicKind::Literal),
+                        DualKind::Concatenation,
+                        Rule::Atomic(s2, AtomicKind::Literal)
+                    ) => Rc::new(Rule::Atomic(
+                        s1.clone()+s2, AtomicKind::Literal
+                    )),
+                    _ => Rc::new(Rule::Dual(gram_r1, kind.clone(), gram_r2))
+                }
+            }
+        },
+        Rule::Single(sub, kind) => {
+            let gram_sub = grammarize_exc_asc(sub);
+            Rc::new(Rule::Single(gram_sub, kind.clone()))
+        }
+
+    }
+}
+
+fn grammarize_exc_desc(rule: &Rc<Rule>) -> Rc<Rule> {
     match rule.deref() {
         Rule::Atomic(_,_) | Rule::Ref(_) => Rc::clone(rule),
         Rule::Single(sub, kind) => Rc::new(Rule::Single(
-            grammarize_exception(sub),
+            grammarize_exc_desc(sub),
             kind.clone() 
         )),
         Rule::Dual(left, DualKind::Exception, right) => match (left.deref(), right.deref()) {
@@ -98,20 +144,26 @@ pub fn grammarize_exception(rule: &Rc<Rule>) -> Rc<Rule> {
                 Rc::clone(right) 
             )),
             // gram(a - (b . c)) -> gram(a - b) . gram(a - c)
-            (_, Rule::Dual(b, knd, c)) => Rc::new(Rule::Dual(
-                grammarize_exception(&Rc::new(Rule::Dual(Rc::clone(left), DualKind::Exception, Rc::clone(b)))), 
-                knd.clone(),
-                grammarize_exception(&Rc::new(Rule::Dual(Rc::clone(left), DualKind::Exception, Rc::clone(c))))
-            )),
+            (_, Rule::Dual(b, knd, c)) => match knd {
+                // gram(a - (b | c)) -> gram(a - b) | gram(a - c)
+                DualKind::Alternation => todo!(),
+                // gram(a - (b , c)) -> gram(a) - gram(b , c)
+                DualKind::Concatenation => todo!(),
+                // gram(a - (b - c)) -> gram(a) - gram(b - c)
+                DualKind::Exception => todo!(),
+            },
             // gram((a . b) - c) -> gram(a - c) . gram(b - c)
-            (Rule::Dual(a, knd, b), _) => Rc::new(Rule::Dual(
-                grammarize_exception(&Rc::new(Rule::Dual(Rc::clone(a), DualKind::Exception, Rc::clone(right)))),
-                knd.clone(),
-                grammarize_exception(&Rc::new(Rule::Dual(Rc::clone(b), DualKind::Exception, Rc::clone(right))))
-            )),
+            (Rule::Dual(a, knd, b), _) => match knd {
+                // gram((a | b) - c) -> gram(a - c) | gram(b - c)
+                DualKind::Alternation => todo!(),
+                // gram((a - b) , c) -> gram(a - b) , gram(c)
+                DualKind::Concatenation => todo!(),
+                // gram((a - b) - c) -> gram(a - b) | gram(a - c)
+                DualKind::Exception => todo!()
+            },
             // gram(<a> - <b>) -> gram(<a - b>)
             (Rule::Single(sub1, knd1), Rule::Single(sub2, knd2)) => if same_single_kind(knd1, knd2) {
-                grammarize_exception(
+                grammarize_exc_desc(
                     &Rc::new(Rule::Single(
                             Rc::new(
                                 Rule::Dual(Rc::clone(sub1), DualKind::Exception, Rc::clone(sub2))
@@ -122,7 +174,7 @@ pub fn grammarize_exception(rule: &Rc<Rule>) -> Rc<Rule> {
                 )
             } else {
             // gram(<a> - ?b?) -> gram(<a - ?b?>)
-            grammarize_exception(
+            grammarize_exc_desc(
                 &Rc::new(Rule::Single(
                         Rc::new(
                             Rule::Dual(Rc::clone(sub1), DualKind::Exception, Rc::new(
@@ -135,18 +187,22 @@ pub fn grammarize_exception(rule: &Rc<Rule>) -> Rc<Rule> {
             )
             },
             _ => Rc::new(Rule::Dual(
-                grammarize_exception(left),
+                grammarize_exc_desc(left),
                 DualKind::Exception,
-                grammarize_exception(right)
+                grammarize_exc_desc(right)
             ))
         },
         Rule::Dual(left, kind, right) => Rc::new(Rule::Dual(
-            grammarize_exception(left), 
+            grammarize_exc_desc(left), 
             kind.clone(),
-            grammarize_exception(right) 
+            grammarize_exc_desc(right) 
         )),
     }
-} 
+}
+
+pub fn grammarize_exception(rule: &Rc<Rule>) -> Rc<Rule> {
+    grammarize_exc_asc(&grammarize_exc_desc(rule))
+}
 
 pub fn grammarize_repetition(rule: &Rc<Rule>) -> Rc<Rule> {
     match rule.deref() {
