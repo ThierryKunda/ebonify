@@ -9,7 +9,21 @@ use std::ops::Deref;
 use std::rc::Rc;
 use crate::ebnf_syntax::*;
 use crate::error::PreTreatmentError;
-
+/// Split the lines of an input string and return the result
+/// 
+/// # Arguments
+/// 
+/// * `content` - The content to be splitted
+/// 
+/// # Examples
+/// ```
+/// use ebonify::pre_treatment::split_lines;
+/// let lines = split_lines(String::from(
+///     "my_rule = {abc,def,ghi};\n
+///     tk2 = ok | nok;"
+/// ));
+/// assert_eq!(lines, vec![String::from("my_rule = {abc,def,ghi};"), String::from("tk2 = ok | nok;")]);
+/// ```
 pub fn split_lines(content: String) -> Vec<String> {
     let re = regex::Regex::new(r"[^;\n]+;").unwrap();
     let content_str = content.as_str();
