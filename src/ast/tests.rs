@@ -463,6 +463,12 @@ fn grammarize_exception_test() {
             &tokenize_rule_from_str(String::from("'abcd' - ('a' | 'c')"))
         ))
     ;
+
+    let rule_3 =
+        get_pure_tree(create_definition_tree(
+            &tokenize_rule_from_str(String::from("('abcd' , 'ef') - ('a' | 'c')"))
+        ))
+    ;
     
     let rule_a =
         get_pure_tree(create_definition_tree(
@@ -477,26 +483,37 @@ fn grammarize_exception_test() {
 
     let rule_c =
         get_pure_tree(create_definition_tree(
-            &tokenize_rule_from_str(String::from("(ok - fine) | (ok - notok)"))
+            &tokenize_rule_from_str(String::from("'bcd'|'abd'"))
+        ))
+    ;
+
+    let rule_d =
+        get_pure_tree(create_definition_tree(
+            &tokenize_rule_from_str(String::from("'bcdef'|'abdef'"))
         ))
     ;
     
     let gram_0 = grammarize_exception(&rule_0);
     let gram_1 = grammarize_exception(&rule_1);
     let gram_2 = grammarize_exception(&rule_2);
+    let gram_3 = grammarize_exception(&rule_3);
     println!("{:?}", rule_0);
     println!("{:?}\n", gram_0);
     println!("{:?}", rule_1);
     println!("{:?}\n", gram_1);
     println!("{:?}", rule_2);
-    println!("{:?}", gram_2);
+    println!("{:?}\n", gram_2);
+    println!("{:?}", rule_3);
+    println!("{:?}", gram_3);
 
-    // let res_0 = are_same_tree(&gram_0, &rule_a, false, false);
-    // let res_1 = are_same_tree(&gram_1, &rule_b, false, false);
-    // let res_2 = are_same_tree(&gram_2, &rule_c, true, false);
-    // assert!(res_0);
-    // assert!(res_1);
-    // assert!(res_2);
+    let res_0 = are_same_tree(&gram_0, &rule_a, false, false);
+    let res_1 = are_same_tree(&gram_1, &rule_b, false, false);
+    let res_2 = are_same_tree(&gram_2, &rule_c, true, false);
+    let res_3 = are_same_tree(&gram_3, &rule_d, true, false);
+    assert!(res_0);
+    assert!(res_1);
+    assert!(res_2);
+    assert!(res_3);
 }
 
 
