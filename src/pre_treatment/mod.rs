@@ -160,10 +160,22 @@ fn tokenize(token: String) -> Token {
     }
 }
 
+/// Returns a list of tokens from a list of string
+/// 
+/// It uses the [tokenize] function to get each token
+/// 
+/// # Arguments
+/// 
+/// * rule - the list of string to be tokenized
 pub fn tokenize_rule(rule: Vec<String>) -> Vec<Token> {
     rule.iter().map(|v| tokenize(v.to_string())).collect()
 }
 
+/// Returns a list of token from a string
+/// 
+/// # Arguments
+/// 
+/// * rule - the rule as a single string
 pub fn tokenize_rule_from_str<'a>(rule: String) -> Vec<Token> {
     let re = regex::Regex::new(r"(('[^']+')|[^\u0022\||,|\-|\{|\(|\[|\]|\)|\}]+)|(\||,|\-|\{|\(|\[|\]|\)|\})|(\u0022[^\u0022]+\u0022)").unwrap();
     let matches_iter = re.find_iter(rule.as_str());
@@ -174,6 +186,13 @@ pub fn tokenize_rule_from_str<'a>(rule: String) -> Vec<Token> {
     tokenize_rule(m)
 }
 
+/// Returns an 2D array of tokens from a file
+/// 
+/// A line is representated as a vector of tokens
+/// 
+/// # Arguments
+/// 
+/// * file - the path of the file to be *tokenized*
 pub fn tokenize_file(file: &str) -> Vec<Vec<Token>> {
     let file_lines = split_lines_from_file(file);
     match file_lines {
@@ -187,6 +206,37 @@ pub fn tokenize_file(file: &str) -> Vec<Vec<Token>> {
     }
 }
 
+/// Checks if a rule is validate from the tokenization process.
+/// 
+/// The EBNF elements has to be well typed to be converted into semantic objects.
+/// 
+/// # Arguments
+/// 
+/// * rules - the sequence of tokens to be validated
+/// 
+/// # Examples
+/// 
+/// ```
+/// use ebonify::ebnf_syntax::Token;
+/// use ebonify::pre_treatment::{tokenize_rule_from_str, validate_rule};
+/// let tokens_0 = tokenize_rule_from_str(String::from("a"));
+/// let tokens_1 = tokenize_rule_from_str(String::from("'a'"));
+/// let tokens_2 = tokenize_rule_from_str(String::from("a | b | 'c'"));
+/// let tokens_3 = tokenize_rule_from_str(String::from("'a | b | c'"));
+/// 
+/// let tokens_4 = tokenize_rule_from_str(String::from("'a"));
+/// let tokens_5 = tokenize_rule_from_str(String::from("a'"));
+/// let tokens_6 = tokenize_rule_from_str(String::from("a | 'b | c"));
+/// 
+/// assert!(validate_rule(tokens_0));
+/// assert!(validate_rule(tokens_1));
+/// assert!(validate_rule(tokens_2));
+/// assert!(validate_rule(tokens_3));
+/// 
+/// assert!(!validate_rule(tokens_4));
+/// assert!(!validate_rule(tokens_5));
+/// assert!(!validate_rule(tokens_6));
+/// ```
 pub fn validate_rule(rules: Vec<Token>) -> bool {
     rules.iter().all(|t| match t {
         Token::Invalid => false,
@@ -195,6 +245,24 @@ pub fn validate_rule(rules: Vec<Token>) -> bool {
 }
 
 
+/// Checks if brackets are paired
+/// 
+/// If the operators are not brackets, it returns `false`
+/// 
+/// # Arguments
+/// 
+/// * operator1 - first bracket
+/// * operator2 - second bracket
+/// 
+/// # Examples
+/// 
+/// ```
+/// use ebonify::ebnf_syntax::Operator;
+/// use ebonify::pre_treatment::brackets_paired;
+/// 
+/// assert!(brackets_paired(&Operator::GroupingL, &Operator::GroupingR));
+/// assert!(brackets_paired(&Operator::OptionalR, &Operator::OptionalL) == false);
+/// ```
 pub fn brackets_paired(operator1: &Operator, operator2: &Operator) -> bool {
     match (operator1,operator2) {
         (Operator::OptionalL, Operator::OptionalR) => true,
@@ -205,6 +273,16 @@ pub fn brackets_paired(operator1: &Operator, operator2: &Operator) -> bool {
     }
 }
 
+/// Checks if a list of tokens contains valid dual operators (unary operations)
+/// 
+/// The operators to be checked are :
+/// - Repetition
+/// - Grouping
+/// - Optional
+/// 
+/// # Arguments
+/// 
+/// * rule - the list of tokens to be checked
 pub fn valid_dual_operators(rule: &Vec<Token>) -> bool {
     let mut operators_list: Vec<&Operator> = Vec::new();
     for token in rule {
@@ -249,6 +327,16 @@ pub fn valid_dual_operators(rule: &Vec<Token>) -> bool {
 operators_test.len() == 0
 }
 
+// Checks if a list of tokens contains valid single operators (binary operations)
+/// 
+/// The operators to be checked are :
+/// - Alternation
+/// - Concatenation
+/// - Exception
+/// 
+/// # Arguments
+/// 
+/// * rule - the list of tokens to be checked
 pub fn valid_single_operators(rule: &Vec<&Token>) -> bool {
     match (rule.first(), rule.last()) {
         (None, None) => return true,
@@ -299,6 +387,14 @@ pub fn valid_single_operators(rule: &Vec<&Token>) -> bool {
     return true
 }
 
+/// Checks if a dual operator does not follow an other one
+/// 
+/// As a dual operator has to be surrounded with sub-rules,
+/// it's forbidden for (at least) two following dual operator to be present in a rule definition
+/// 
+/// # Arguments
+/// 
+/// * rule - the list of tokens to be checked
 pub fn valid_following_operators(rule: &Vec<Token>) -> bool {
     if rule.len() == 0 {
         return true;
@@ -343,6 +439,12 @@ pub fn valid_following_operators(rule: &Vec<Token>) -> bool {
     return true;
 }
 
+/// Checks if two tokens are the same (for operators) or equivalent (for symbols)
+/// 
+/// # Arguments
+/// 
+/// * token1 - first token
+/// * token2 - second token
 pub fn tokens_equals(token1: &Token, token2: &Token) -> bool {
     match (token1, token2) {
         (Token::Op(op1), Token::Op(op2)) => match (op1, op2) {
@@ -366,6 +468,12 @@ pub fn tokens_equals(token1: &Token, token2: &Token) -> bool {
     }
 }
 
+/// Checks if two list of tokens are equivalent
+/// 
+/// # Arguments
+/// 
+/// * token1 - first list of tokens
+/// * token2 - second tokens
 pub fn rules_equals(rule1: &Vec<&Token>, rule2: &Vec<&Token>) -> bool {
     for i in 0..rule1.len() {
         let a = rule1.get(i);
@@ -383,6 +491,18 @@ pub fn rules_equals(rule1: &Vec<&Token>, rule2: &Vec<&Token>) -> bool {
     true
 }
 
+/// Checks if a list of tokens references contains valid dual operators (unary operations)
+/// 
+/// *Use the [valid_dual_operators] function to check owned tokens*
+/// 
+/// The operators to be checked are :
+/// - Repetition
+/// - Grouping
+/// - Optional
+/// 
+/// # Arguments
+/// 
+/// * rule - the list of tokens to be checked
 pub fn valid_dual_ref_operators(rule: &Vec<&Token>) -> bool {
     let mut operators_list: Vec<&Operator> = Vec::new();
     for token in rule {
@@ -429,6 +549,11 @@ pub fn valid_dual_ref_operators(rule: &Vec<&Token>) -> bool {
 operators_test.len() == 0
 }
 
+/// Returns a list of tokens references from a list of owned ones
+/// 
+/// # Arguments
+/// 
+/// * rule - the rule of tokens to be referenced
 pub fn tokens_as_ref(rule: &Vec<Token>) -> Vec<&Token> {
     let mut tokens: Vec<&Token> = Vec::new();
     for tk in rule {
