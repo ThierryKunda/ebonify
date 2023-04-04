@@ -90,6 +90,29 @@ pub fn split_members_aux(rule: String) -> (String, String) {
     (rules.remove(0), rules.remove(0))
 }
 
+/// Apply [split_members_aux] to a list of string
+/// 
+/// # Arguments
+/// 
+/// * rules - list of string to split with a single '=' as a separator
+/// 
+/// # Examples
+/// 
+/// ```
+/// use ebonify::pre_treatment::split_members;
+/// let split_list = split_members(vec![
+///     String::from("abc = def"),
+///     String::from("abc + 123 = def + 456")
+/// ]);
+/// 
+/// assert_eq!(
+///     split_list,
+///     vec![
+///         (String::from("abc"), String::from("def")),
+///         (String::from("abc + 123"), String::from("def + 456"))
+///     ]
+/// );
+/// ```
 pub fn split_members(rules: Vec<String>) -> Vec<(String, String)> {
     let mut members: Vec<(String, String)> = Vec::new();
     for r in rules.iter() {
