@@ -94,7 +94,7 @@ pub fn split_members_aux(rule: String) -> (String, String) {
 /// 
 /// # Arguments
 /// 
-/// * rules - list of string to split with a single '=' as a separator
+/// * `rules` - list of string to split with a single '=' as a separator
 /// 
 /// # Examples
 /// 
