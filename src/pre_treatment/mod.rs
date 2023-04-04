@@ -121,6 +121,18 @@ pub fn split_members(rules: Vec<String>) -> Vec<(String, String)> {
     members
 }
 
+/// **Returns the associated semantic element of a string**
+/// 
+/// In the EBNF metasyntax there are three types of element :
+/// - terminal symbol, represented by/equivalent to a string
+/// - non-terminal symbol, which refers to a definition of syntax rules
+/// using terminal and/or non-terminal symbol
+/// - and operator, which can be splitted in two classes :
+/// unary-type and binary-type operators
+/// 
+/// # Arguments
+/// 
+/// * `token` - the string to be *tokenized*
 fn tokenize(token: String) -> Token {
     let token_as_str = token.as_str();
     match token_as_str {
