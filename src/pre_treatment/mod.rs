@@ -37,6 +37,23 @@ pub fn split_lines(content: String) -> Vec<String> {
     v
 }
 
+/// Split the lines of a file and return the result
+/// 
+/// # Arguments
+/// 
+/// * `filepath` - The path of the file holding some content
+/// 
+/// # Examples
+/// 
+/// ```
+/// use ebonify::pre_treatment::split_lines_from_file;
+/// let lines = split_lines_from_file("tests_samples/separation.txt").unwrap();
+/// assert_eq!(lines, vec![
+///     String::from("Line 1 : ABCD;"),
+///     String::from("Line 2 : EFGH;"),
+///     String::from("Line n : ...;")]
+/// );
+/// ```
 pub fn split_lines_from_file(filepath: &str) -> Result<Vec<String>, PreTreatmentError> {
     let file_content = fs::read_to_string(filepath);
     match file_content {
