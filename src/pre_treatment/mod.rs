@@ -165,7 +165,7 @@ pub fn tokenize_rule(rule: Vec<String>) -> Vec<Token> {
 }
 
 pub fn tokenize_rule_from_str<'a>(rule: String) -> Vec<Token> {
-    let re = regex::Regex::new(r"([^\u0022\||,|\-|\{|\(|\[|\]|\)|\}]+)|(\||,|\-|\{|\(|\[|\]|\)|\})|(\u0022[^\u0022]+\u0022)|('[^']+')").unwrap();
+    let re = regex::Regex::new(r"(('[^']+')|[^\u0022\||,|\-|\{|\(|\[|\]|\)|\}]+)|(\||,|\-|\{|\(|\[|\]|\)|\})|(\u0022[^\u0022]+\u0022)").unwrap();
     let matches_iter = re.find_iter(rule.as_str());
     let m: Vec<String> = matches_iter
         .map(|el| el.as_str().trim().to_string())
