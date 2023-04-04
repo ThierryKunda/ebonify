@@ -66,6 +66,21 @@ pub fn split_lines_from_file(filepath: &str) -> Result<Vec<String>, PreTreatment
     }
 }
 
+/// Split the elements separated with a '=' and returns a tuple of both elements
+/// 
+/// # Arguments
+/// 
+/// * `rule` - string to be splitted
+/// 
+/// # Examples
+/// 
+/// ```
+/// use ebonify::pre_treatment::split_members_aux;
+/// let split_1 = split_members_aux(String::from("abc = def"));
+/// let split_2 = split_members_aux(String::from("abc + 123 = def + 456"));
+/// assert_eq!(split_1, (String::from("abc"), String::from("def")));
+/// assert_eq!(split_2, (String::from("abc + 123"), String::from("def + 456")));
+/// ```
 pub fn split_members_aux(rule: String) -> (String, String) {
     let rule_split: Vec<&str> = rule.split("=").collect();
     let mut rules: Vec<String> = rule_split.iter()
