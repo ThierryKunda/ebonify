@@ -5,6 +5,7 @@ use serde_json::Value;
 
 use crate::{ebnf_syntax::*, utils::*};
 
+/// Creates a map with name-definition association from JSON
 pub fn btree_rule_from_json(rules_json: Value) -> Option<BTreeMap<String, Rc<Rule>>> {
     if let Value::Object(name_def_pairs) = rules_json {
         let mut res: BTreeMap<String, Rc<Rule>> = BTreeMap::new();
@@ -17,6 +18,7 @@ pub fn btree_rule_from_json(rules_json: Value) -> Option<BTreeMap<String, Rc<Rul
     }
 }
 
+/// Creates an association counter from JSON
 pub fn assoc_counter_from_json(counter_json: &Value) -> Option<AssocRuleCounter> {
     if let Value::Object(m) = counter_json {
         let mut res = AssocRuleCounter::new();
@@ -32,6 +34,7 @@ pub fn assoc_counter_from_json(counter_json: &Value) -> Option<AssocRuleCounter>
     return None;
 }
 
+/// Creates a rule from JSON
 pub fn rule_from_json(rule_json: Value) -> Rc<Rule> {
     if let Value::Object(obj) = rule_json {
         if let (Some(Value::String(single)), Some(value)) = (obj.get(&String::from("node")), obj.get(&String::from("value"))) {
