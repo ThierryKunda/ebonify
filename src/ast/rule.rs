@@ -8,6 +8,7 @@ use crate::ebnf_syntax::*;
 
 use super::tokens::*;
 
+/// Returns an alternative version of a rule without optional operation.
 pub fn grammarize_optional(rule: &Rc<Rule>) -> Rc<Rule> {
     match rule.deref() {
         Rule::Atomic(_, _) | Rule::Ref(_) => Rc::clone(rule),
@@ -204,6 +205,7 @@ fn grammarize_exc_desc(rule: &Rc<Rule>) -> Rc<Rule> {
     }
 }
 
+/// Returns an alternative version of a rule without exception operation.
 pub fn grammarize_exception(rule: &Rc<Rule>) -> Rc<Rule> {
     grammarize_exc_asc(
         // ↑ Re-calculate with the said spreading
@@ -215,6 +217,7 @@ pub fn grammarize_exception(rule: &Rc<Rule>) -> Rc<Rule> {
     )
 }
 
+/// Returns an alternative version of a rule without repetition operation.
 pub fn grammarize_repetition(rule: &Rc<Rule>) -> Rc<Rule> {
     match rule.deref() {
         Rule::Atomic(_, _) | Rule::Ref(_) => Rc::clone(rule),
@@ -239,6 +242,8 @@ pub fn grammarize_repetition(rule: &Rc<Rule>) -> Rc<Rule> {
     }
 }
 
+/// Given a rule and a name-definition pair, it returns the first rule with references of the the other rule
+/// if identifiers of the second rule appears in the second rule
 pub fn tree_with_id_ref(name_def_pair: (&String, &Rc<Rule>), rule_to_transform: &Rc<Rule>) -> Rc<Rule> {
     match rule_to_transform.deref() {
         Rule::Atomic(s, AtomicKind::Identifier) => if s == name_def_pair.0 {
@@ -259,6 +264,7 @@ pub fn tree_with_id_ref(name_def_pair: (&String, &Rc<Rule>), rule_to_transform: 
     }
 }
 
+/// Returns the rule with all leaves as values and not references to other rules
 pub fn get_pure_tree(rule: Rc<Rule>) -> Rc<Rule> {
     match rule.deref() {
         Rule::Atomic(s, kind) => Rc::new(Rule::Atomic(s.to_string(), kind.clone())),
@@ -279,6 +285,9 @@ pub fn get_pure_tree(rule: Rc<Rule>) -> Rc<Rule> {
     }
 }
 
+/// Checks if two trees are equivalent, with optional criteria such as :
+/// - comparing the leaves
+/// - comparing references of other rules
 pub fn are_same_tree<'a>(rule_1: &'a Rule, rule_2: &'a Rule, leaves_compared: bool, deep: bool) -> bool {
     match (rule_1, rule_2) {
         (Rule::Atomic(_, _), Rule::Ref(_)) |
@@ -324,6 +333,7 @@ pub fn same_dual_kind(k1: &DualKind, k2: &DualKind) -> bool {
     }
 }
 
+/// Returns a tree created from a list of tokens
 pub fn create_definition_tree<'a>(rule: &'a Vec<Token>) -> Rc<Rule> {
     let rule_tree = create_rule_tree(rule);
     tree_without_grouping(Rc::new(rule_tree))
@@ -345,6 +355,7 @@ pub fn tree_without_grouping(rule: Rc<Rule>) -> Rc<Rule> {
     }
 }
 
+/// Generates a rule from a set of actions on a rule, defined for each type of operation
 pub fn generate_rule_result<GA, GR, GS, GD>(rule: &Rc<Rule>, gen_from_atomic: &GA, gen_from_ref: &GR, gen_from_single: &GS, gen_from_dual: &GD) -> Rc<Rule>
 where
     GA: Fn(&Rule) -> Rc<Rule>,
@@ -359,6 +370,7 @@ where
         }
 }
 
+/// Counts from a set of conditions on a rule, defined for each type of operation
 pub fn counting_single_result<T, I, Cnt: Counter<T, I> + Clone, PA, PR, VS, VD>(rule: &Rc<Rule>, count_atomic: &PA, count_ref: &PR, op_on_single_counter: &VS, op_on_two_counters: &VD) -> Cnt
 where
     PA: Fn(&Rule) -> Cnt,
@@ -376,7 +388,7 @@ where
             Rule::Ref(r) => op_on_single_counter(rule, count_ref(r))
         }
     }
-
+/// Checks a set of predicates on a rule, defined for each type of operation
 pub fn predicate_single_result<PA, PR, VS, VD>(rule: &Rc<Rule>, pred_atomic: &PA, pred_ref: &PR, op_on_single_truthness: &VS, op_on_dual_truthness: &VD) -> bool
     where
         PA: Fn(&Rule) -> bool,
@@ -455,6 +467,7 @@ pub fn create_rule_tree_by_ref(rule: Vec<&Token>) -> Rule {
     Rule::Atomic("Invalid".to_string(), AtomicKind::Identifier)
 }
 
+/// Returns associations of name-definition for each definition stored in a list
 pub fn create_trees(definitions: Vec<String>) -> Vec<(String, Rc<Rule>)> {   
     let mut trees: Vec<(String, Rc<Rule>)> = Vec::new();
     let name_def_pairs = split_members(definitions);
