@@ -1,4 +1,4 @@
-mod tokens;
+pub mod tokens;
 pub mod rule;
 pub mod json;
 #[cfg(test)]
