@@ -46,10 +46,3 @@ pub enum Token {
     Rl(Rc<Rule>),
     Invalid,
 }
-
-fn println_shift(txt: &str, shift: u8) {
-    for _ in 1..shift {
-        print!("  ");
-    }
-    println!("{}", txt);
-}

@@ -42,6 +42,7 @@ pub struct RuleCounter {
     total: u32
 }
 
+#[allow(unused)]
 impl RuleCounter {
     pub fn new() -> Self {
         RuleCounter { total: 0 }
@@ -95,7 +96,7 @@ impl Counter<usize, u32> for RuleCounter {
         }
     }
 
-    fn element_already_stored(&self, _element: &usize) -> Option<bool> { None }
+    fn element_already_stored(&self, element: &usize) -> Option<bool> { None }
 
     fn add_element_with_qty(&mut self, element: &usize, qty: u32) {}
 

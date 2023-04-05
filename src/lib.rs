@@ -4,5 +4,6 @@ pub mod pre_treatment;
 pub mod ebnf_syntax;
 pub mod ast;
 mod structure;
+#[allow(unused)]
 mod utils;
 mod cli;

@@ -1,9 +1,9 @@
-mod ebnf_syntax;
-mod error;
-mod pre_treatment;
-mod ast;
-mod structure;
-mod utils;
+// mod ebnf_syntax;
+// mod error;
+// mod pre_treatment;
+// mod ast;
+// mod structure;
+// mod utils;
 mod cli;
 use clap::Parser;
 // use structure::EbnfTree;
