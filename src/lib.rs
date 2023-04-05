@@ -2,7 +2,7 @@
 mod error;
 pub mod pre_treatment;
 pub mod ebnf_syntax;
-mod ast;
+pub mod ast;
 mod structure;
 mod utils;
 mod cli;
