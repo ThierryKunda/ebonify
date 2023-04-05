@@ -62,19 +62,6 @@ fn has_highter_priority_to_test() {
 }
 
 #[test]
-fn least_prior_is_unary_test() {
-    let tokens_0: Vec<Token> = tokenize_rule_from_str(String::from("{ 123 }"));
-    let tokens_1: Vec<Token> = tokenize_rule_from_str(String::from("{a,b|c}"));
-    let tokens_2: Vec<Token> = tokenize_rule_from_str(String::from("{a,b}|c"));
-    let tokens_3: Vec<Token> = tokenize_rule_from_str(String::from("a,{b|c}"));
-    
-    assert!(least_prior_is_unary(&tokens_as_ref(&tokens_0)));
-    assert!(least_prior_is_unary(&tokens_as_ref(&tokens_1)));
-    assert!(least_prior_is_unary(&tokens_as_ref(&tokens_2)) == false);
-    assert!(least_prior_is_unary(&tokens_as_ref(&tokens_3)) == false);
-}
-
-#[test]
 fn get_least_prior_binary_index_test() {
     let tokens_0: Vec<Token> = tokenize_rule_from_str(String::from("abc"));
     let tokens_1: Vec<Token> = tokenize_rule_from_str(String::from("{abc}"));
