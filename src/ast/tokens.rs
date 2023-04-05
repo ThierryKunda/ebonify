@@ -1,6 +1,7 @@
 use crate::ebnf_syntax::*;
 use crate::pre_treatment::{brackets_paired, valid_single_operators, valid_dual_ref_operators};
 
+/// Checks if the first operator has a higher priority than the second one
 pub fn has_highter_priority_to(op1: &Operator, op2: &Operator) -> bool {
     match (op1, op2) {
         (&Operator::Exception, &Operator::Exception) => false,
@@ -11,6 +12,27 @@ pub fn has_highter_priority_to(op1: &Operator, op2: &Operator) -> bool {
     }
 }
 
+/// Cheks if the least prior operator is a unary-type one
+/// 
+/// # Arguments
+/// 
+/// * rule - defined by a list of references to tokens (see also [Token])
+/// 
+/// # Examples
+/// 
+/// ```
+/// use ebonify::pre_treatment::{tokenize_rule_from_str, tokens_as_ref};
+/// use ebonify::ast::tokens::least_prior_is_unary;
+/// 
+/// let tokens_0 = tokenize_rule_from_str(String::from("{ 123 }"));
+/// let tokens_1 = tokenize_rule_from_str(String::from("{a,b|c}"));
+/// let tokens_2 = tokenize_rule_from_str(String::from("{a,b}|c"));
+/// let tokens_3 = tokenize_rule_from_str(String::from("a,{b|c}"));
+/// assert!(least_prior_is_unary(&tokens_as_ref(&tokens_0)));
+/// assert!(least_prior_is_unary(&tokens_as_ref(&tokens_1)));
+/// assert!(least_prior_is_unary(&tokens_as_ref(&tokens_2)) == false);
+/// assert!(least_prior_is_unary(&tokens_as_ref(&tokens_3)) == false);
+/// ```
 pub fn least_prior_is_unary(rule: &Vec<&Token>) -> bool {
     // We borrow the rule without the "extremities"
     let mut test_vec: Vec<&Token> = Vec::new();
@@ -20,6 +42,8 @@ pub fn least_prior_is_unary(rule: &Vec<&Token>) -> bool {
     return valid_dual_ref_operators(&test_vec) && valid_single_operators(&test_vec);
 }
 
+
+/// Add priority by surrounding operations with grouping brackets when needed
 pub fn with_priority_parentheses<'a>(rule: Vec<&'a Token>) -> Vec<&'a Token> {
     let rule_len = rule.len();
     if rule_len == 1 {
@@ -108,6 +132,7 @@ pub fn with_priority_parentheses<'a>(rule: Vec<&'a Token>) -> Vec<&'a Token> {
     }
 }
 
+/// Concat rules defined as lists of tokens references
 pub fn concat_rules<'a>(mut rule1: Vec<&'a Token>, mut rule2: Vec<&'a Token>, middle: Option<&&'a Token>) -> Vec<&'a Token> {
     if let Some(m) = middle {
         rule1.push(*m);
@@ -152,6 +177,7 @@ pub fn get_rule_without_first_last(rule: Vec<&Token>) -> Vec<&Token>{
     return new_rule;
 }
 
+/// Returns the index of the least prior binary operator
 pub fn get_least_prior_binary_index(rule: &Vec<&Token>) -> Option<usize> {
     let mut sub_tree_idx = 0_usize; 
     let mut ops_tuples: Vec<(usize, usize, &Operator)> = Vec::new();
@@ -202,6 +228,7 @@ pub fn get_least_prior_binary_index(rule: &Vec<&Token>) -> Option<usize> {
     
 }
 
+/// Checks if an operator is a binary one
 pub fn is_binary(operator: &Operator) -> bool {
     match operator {
         Operator::Alternation => true,
