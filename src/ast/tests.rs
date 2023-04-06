@@ -4,7 +4,7 @@ use std::rc::Rc;
 use crate::{
     utils::*,
     ebnf_syntax::*,
-    pre_treatment::{
+    parsing::{
         tokenize_rule_from_str,
         tokens_as_ref,
         rules_equals,

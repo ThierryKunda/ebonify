@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use super::{tokens_as_ref, tokenize};
 
-use crate::{ebnf_syntax::*, pre_treatment::{valid_dual_ref_operators, tokenize_rule, split_lines_from_file, split_members_aux, brackets_paired, valid_dual_operators, valid_single_operators, valid_following_operators}};
+use crate::{ebnf_syntax::*, parsing::{valid_dual_ref_operators, tokenize_rule, split_lines_from_file, split_members_aux, brackets_paired, valid_dual_operators, valid_single_operators, valid_following_operators}};
 
 #[test]
 fn split_lines_from_file_test() {

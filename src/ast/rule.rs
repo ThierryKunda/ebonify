@@ -1,7 +1,7 @@
 use std::ops::Deref;
 use std::rc::{Rc, Weak};
 
-use crate::pre_treatment::{tokenize_rule_from_str, split_members, tokens_as_ref};
+use crate::parsing::{tokenize_rule_from_str, split_members, tokens_as_ref};
 use crate::utils::{Counter, diff_str};
 
 use crate::ebnf_syntax::*;

@@ -17,7 +17,7 @@ use crate::error::PreTreatmentError;
 /// 
 /// # Examples
 /// ```
-/// use ebonify::pre_treatment::split_lines;
+/// use ebonify::parsing::split_lines;
 /// let lines = split_lines(String::from(
 ///     "my_rule = {abc,def,ghi};\n
 ///     tk2 = ok | nok;"
@@ -46,7 +46,7 @@ pub fn split_lines(content: String) -> Vec<String> {
 /// # Examples
 /// 
 /// ```
-/// use ebonify::pre_treatment::split_lines_from_file;
+/// use ebonify::parsing::split_lines_from_file;
 /// let lines = split_lines_from_file("tests_samples/separation.txt").unwrap();
 /// assert_eq!(lines, vec![
 ///     String::from("Line 1 : ABCD;"),
@@ -75,7 +75,7 @@ pub fn split_lines_from_file(filepath: &str) -> Result<Vec<String>, PreTreatment
 /// # Examples
 /// 
 /// ```
-/// use ebonify::pre_treatment::split_members_aux;
+/// use ebonify::parsing::split_members_aux;
 /// let split_1 = split_members_aux(String::from("abc = def"));
 /// let split_2 = split_members_aux(String::from("abc + 123 = def + 456"));
 /// assert_eq!(split_1, (String::from("abc"), String::from("def")));
@@ -99,7 +99,7 @@ pub fn split_members_aux(rule: String) -> (String, String) {
 /// # Examples
 /// 
 /// ```
-/// use ebonify::pre_treatment::split_members;
+/// use ebonify::parsing::split_members;
 /// let split_list = split_members(vec![
 ///     String::from("abc = def"),
 ///     String::from("abc + 123 = def + 456")
@@ -218,7 +218,7 @@ pub fn tokenize_file(file: &str) -> Vec<Vec<Token>> {
 /// 
 /// ```
 /// use ebonify::ebnf_syntax::Token;
-/// use ebonify::pre_treatment::{tokenize_rule_from_str, validate_rule};
+/// use ebonify::parsing::{tokenize_rule_from_str, validate_rule};
 /// let tokens_0 = tokenize_rule_from_str(String::from("a"));
 /// let tokens_1 = tokenize_rule_from_str(String::from("'a'"));
 /// let tokens_2 = tokenize_rule_from_str(String::from("a | b | 'c'"));
@@ -258,7 +258,7 @@ pub fn validate_rule(rules: Vec<Token>) -> bool {
 /// 
 /// ```
 /// use ebonify::ebnf_syntax::Operator;
-/// use ebonify::pre_treatment::brackets_paired;
+/// use ebonify::parsing::brackets_paired;
 /// 
 /// assert!(brackets_paired(&Operator::GroupingL, &Operator::GroupingR));
 /// assert!(brackets_paired(&Operator::OptionalR, &Operator::OptionalL) == false);

@@ -1,6 +1,6 @@
 // mod ebnf_syntax;
 // mod error;
-// mod pre_treatment;
+// mod parsing;
 // mod ast;
 // mod structure;
 // mod utils;
