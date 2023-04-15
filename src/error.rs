@@ -2,15 +2,15 @@ use std::fmt::{Display, Debug};
 use std::error::Error;
 
 #[derive(Debug)]
-pub struct PreTreatmentError;
+pub struct ParsingError;
 
-impl Display for PreTreatmentError {
+impl Display for ParsingError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "The pre-processing failed")
     }
 }
 
-impl Error for PreTreatmentError {}
+impl Error for ParsingError {}
 
 #[derive(Debug)]
 struct RuleError {}

@@ -60,7 +60,7 @@ pub mod from {
             return Err(JSONParsingError);
         }
 
-        pub fn from_file(filepath: &str) -> Result<EbnfTree, PreTreatmentError> {
+        pub fn from_file(filepath: &str) -> Result<EbnfTree, ParsingError> {
             let fp = Path::new(filepath);
             let file_content = split_lines_from_file(filepath);
             match file_content {
@@ -82,7 +82,7 @@ pub mod from {
                     res.syntax_source_name = Some(syntax_source_name);
                     Ok(res)
                 },
-                Err(_) => Err(PreTreatmentError),
+                Err(_) => Err(ParsingError),
             }
         }
     }

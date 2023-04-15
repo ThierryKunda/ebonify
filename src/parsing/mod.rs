@@ -8,7 +8,7 @@ use std::fs;
 use std::ops::Deref;
 use std::rc::Rc;
 use crate::ebnf_syntax::*;
-use crate::error::PreTreatmentError;
+use crate::error::ParsingError;
 /// Split the lines of an input string and return the result
 /// 
 /// # Arguments
@@ -54,14 +54,14 @@ pub fn split_lines(content: String) -> Vec<String> {
 ///     String::from("Line n : ...;")]
 /// );
 /// ```
-pub fn split_lines_from_file(filepath: &str) -> Result<Vec<String>, PreTreatmentError> {
+pub fn split_lines_from_file(filepath: &str) -> Result<Vec<String>, ParsingError> {
     let file_content = fs::read_to_string(filepath);
     match file_content {
         Ok(ct) => {
             Ok(split_lines(ct))
         },
         Err(_) => {
-            Err(PreTreatmentError)
+            Err(ParsingError)
         },
     }
 }
