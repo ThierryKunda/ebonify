@@ -40,7 +40,6 @@ fn tree_from_file_test() {
     assert!(are_same_tree(tree.rules.get("digit").unwrap(), &digit_rule, true, false));
     assert!(are_same_tree(tree.rules.get("string").unwrap(), &string_rule, true, false));
     assert!(are_same_tree(tree.rules.get("positive_number").unwrap(), &positive_number_rule, true, false));
-    println!("{:?}", integer_rule);
     assert!(are_same_tree(tree.rules.get("integer").unwrap(), &integer_rule, true, false));
     assert!(are_same_tree(tree.rules.get("float").unwrap(), &float_rule, true, false));
 }
