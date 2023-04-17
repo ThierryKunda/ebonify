@@ -20,13 +20,17 @@ pub struct Cli {
 
 #[derive(Debug, Args)]
 pub struct ConvertArgs {
+    #[arg(short, long)]
     source_type: Option<SourceType>,
+    #[arg(short, long)]
     value: String
 }
 
 #[derive(Debug, Args)]
 pub struct MatchArgs {
+    #[arg(short, long)]
     syntax_source_type: Option<SourceType>,
+    #[arg(short, long)]
     value: String
 }
 
