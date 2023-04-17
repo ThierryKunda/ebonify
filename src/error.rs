@@ -13,7 +13,7 @@ impl Display for ParsingError {
 impl Error for ParsingError {}
 
 #[derive(Debug)]
-struct RuleError {}
+pub struct RuleError {}
 
 impl Display for RuleError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
