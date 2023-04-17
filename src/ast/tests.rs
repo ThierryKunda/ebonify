@@ -13,7 +13,7 @@ use crate::{
         tokenize_rule
     },
 };
-use super::{tokens::*, rule::*};
+use super::{tokens::*, rule::*, json::rule_from_json};
 
 #[test]
 fn rules_equals_test() {
