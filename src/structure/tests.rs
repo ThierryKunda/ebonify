@@ -1,3 +1,5 @@
+use serde_json::json;
+
 use crate::{ast::rule::*, parsing::tokenize_rule_from_str};
 use super::builders::EbnfTreeBuilder;
 
@@ -42,4 +44,9 @@ fn tree_from_file_test() {
     assert!(are_same_tree(tree.rules.get("positive_number").unwrap(), &positive_number_rule, true, false));
     assert!(are_same_tree(tree.rules.get("integer").unwrap(), &integer_rule, true, false));
     assert!(are_same_tree(tree.rules.get("float").unwrap(), &float_rule, true, false));
+}
+
+#[test]
+fn rule_from_json_test() {
+    // let rule_json = json!();
 }
