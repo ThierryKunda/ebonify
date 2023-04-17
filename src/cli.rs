@@ -1,5 +1,7 @@
 // use std::path::PathBuf;
 
+use std::fmt::Display;
+
 use clap::{Parser, Subcommand, Args, ValueEnum};
 
 #[derive(Debug, Copy, Clone, ValueEnum)]
@@ -7,6 +9,16 @@ pub enum SourceType {
     JSON,
     File,
     HTTP,
+}
+
+impl Display for SourceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self {
+            SourceType::JSON => write!(f, "json"),
+            SourceType::File => write!(f, "file"),
+            SourceType::HTTP => write!(f, "http"),
+        }
+    }
 }
 
  #[derive(Parser, Debug)]
@@ -21,7 +33,10 @@ pub struct Cli {
 #[derive(Debug, Args)]
 pub struct ConvertArgs {
     #[arg(short, long)]
-    source_type: Option<SourceType>,
+    #[arg(default_value_t = SourceType::JSON)]
+    from_type: SourceType,
+    #[arg(short, long)]
+    dest_type: SourceType,
     #[arg(short, long)]
     value: String
 }
