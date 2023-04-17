@@ -552,3 +552,36 @@ fn grammarize_optional_test() {
     assert!(res_1);
     assert!(res_2);
 }
+
+#[test]
+fn rule_from_json_test() {
+    let rule_0 = rule_from_json(&json!({
+        "node": "identifier",
+        "value": "hello"
+    })).unwrap();
+    let rule_1 = rule_from_json(&json!({
+        "node": "concatenation",
+        "left": {
+            "node": "identifier",
+            "value": "ok"
+        },
+        "right": {
+            "node": "literal",
+            "value": "fine"
+        }
+    })).unwrap();
+
+    let expected_0 = 
+        get_pure_tree(create_definition_tree(
+            &tokenize_rule_from_str(String::from("hello"))
+        ))
+    ;
+    let expected_1 = 
+        get_pure_tree(create_definition_tree(
+            &tokenize_rule_from_str(String::from("ok , 'fine'"))
+        ))
+    ;
+
+    assert!(are_same_tree(&rule_0, &expected_0, true, false));
+    assert!(are_same_tree(&rule_1, &expected_1, true, false));
+}
