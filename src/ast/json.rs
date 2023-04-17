@@ -10,7 +10,7 @@ pub fn btree_rule_from_json(rules_json: Value) -> Option<BTreeMap<String, Rc<Rul
     if let Value::Object(name_def_pairs) = rules_json {
         let mut res: BTreeMap<String, Rc<Rule>> = BTreeMap::new();
         for (name, def) in name_def_pairs {
-            res.insert(name, rule_from_json(def));
+            res.insert(name, rule_from_json(&def)?);
         }
         Some(res)
     } else {
@@ -35,46 +35,57 @@ pub fn assoc_counter_from_json(counter_json: &Value) -> Option<AssocRuleCounter>
 }
 
 /// Creates a rule from JSON
-pub fn rule_from_json(rule_json: Value) -> Rc<Rule> {
-    if let Value::Object(obj) = rule_json {
-        if let (Some(Value::String(single)), Some(value)) = (obj.get(&String::from("node")), obj.get(&String::from("value"))) {
-            match (single.as_str(), value) {
-                ("literal", Value::String(lit)) => return Rc::new(Rule::Atomic(lit.to_string(), AtomicKind::Identifier)),
-                ("identifier", Value::String(id)) => return Rc::new(Rule::Atomic(id.to_string(), AtomicKind::Identifier)),
-                (_, Value::Object(m))
-                => if let (Some(left), Some(right)) = (
-                    m.get(&String::from("left")),
-                    m.get(&String::from("right"))
-                ) {
-                    match single.as_str() {
-                        "alternation" => return Rc::new(Rule::Dual(
-                            rule_from_json(left.clone()),
-                            DualKind::Alternation,
-                            rule_from_json(right.clone())
-                        )),
-                        "concatenation" => return Rc::new(Rule::Dual(
-                            rule_from_json(left.clone()),
-                            DualKind::Concatenation,
-                            rule_from_json(right.clone())
-                        )),
-                        "exception" => return Rc::new(Rule::Dual(
-                            rule_from_json(left.clone()),
-                            DualKind::Exception,
-                            rule_from_json(right.clone())
-                        )),
-                        _ => (),
-                    }
+pub fn rule_from_json(rule_json: &Value) -> Option<Rc<Rule>> {
+    match rule_json {
+        Value::Object(obj) => match obj.get("node")? {
+            Value::String(s) => match s.as_str() {
+                "literal" => if let Value::String(s) = obj.get("value")? {
+                    Some(Rc::new(Rule::Atomic(
+                        s.to_string(),
+                        AtomicKind::Literal
+                    )))
+                } else {
+                    None
                 },
-                _ => ()
+                "identifier" => if let Value::String(s) = obj.get("value")? {
+                    Some(Rc::new(Rule::Atomic(
+                        s.to_string(),
+                        AtomicKind::Identifier
+                    )))
+                } else {
+                    None
+                },
+                "alternation" => Some(Rc::new(Rule::Dual(
+                    rule_from_json(obj.get("left")?)?,
+                    DualKind::Alternation,
+                    rule_from_json(obj.get("right")?)?
+                ))),
+                "concatenation" => Some(Rc::new(Rule::Dual(
+                    rule_from_json(obj.get("left")?)?,
+                    DualKind::Concatenation,
+                    rule_from_json(obj.get("right")?)?
+                ))),
+                "exception" => Some(Rc::new(Rule::Dual(
+                    rule_from_json(obj.get("left")?)?,
+                    DualKind::Exception,
+                    rule_from_json(obj.get("right")?)?
+                ))),
+                "repetition" => Some(Rc::new(Rule::Single(
+                    rule_from_json(obj.get("value")?)?,
+                    SingleKind::Repetition
+                ))),
+                "grouping" => Some(Rc::new(Rule::Single(
+                    rule_from_json(obj.get("value")?)?,
+                    SingleKind::Grouping
+                ))),
+                "optional" => Some(Rc::new(Rule::Single(
+                    rule_from_json(obj.get("value")?)?,
+                    SingleKind::Optional
+                ))),
+                _ => None
             }
-        } else if let (Some(Value::String(dual)), Some(v)) = (obj.get(&String::from("node")), obj.get(&String::from("v"))) {
-            match dual.as_str() {
-                "repetition" => return Rc::new(Rule::Single(rule_from_json(v.clone()), SingleKind::Repetition)),
-                "grouping" => return Rc::new(Rule::Single(rule_from_json(v.clone()), SingleKind::Repetition)),
-                "optional" => return Rc::new(Rule::Single(rule_from_json(v.clone()), SingleKind::Optional)),
-                _ => (),
-            }
+            _ => None
         }
+        _ => None
     }
-    return Rc::new(Rule::Atomic(String::from(""), AtomicKind::Identifier));
 }
