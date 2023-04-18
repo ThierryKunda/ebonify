@@ -17,7 +17,16 @@ struct HttpData {
 
 impl Data for JsonData {
     fn get_json(&self) -> Result<Value, ConversionError> {
-        Ok(self.value.clone())
+        let val = serde_json::from_str::<Value>(&self.value);
+        match val {
+            Ok(v) => Ok(v),
+            Err(e) => match e.classify() {
+                serde_json::error::Category::Syntax => Err(
+                    ConversionError::new("The string is not a syntactically well formatted JSON")
+                ),
+                _ => Err(ConversionError::new("Unknow error")),
+            },
+        }
     }
 }
 
