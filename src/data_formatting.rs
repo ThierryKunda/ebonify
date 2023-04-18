@@ -6,7 +6,7 @@ pub trait Data {
 }
 
 struct JsonData {
-    value: Value
+    value: String
 }
 
 
@@ -40,6 +40,5 @@ impl Data for HttpData {
             }
             Err(_) => Err(ConversionError::new("Error from HTTP request")),
         }
-
     }
 }
