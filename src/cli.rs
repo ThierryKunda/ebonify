@@ -32,13 +32,14 @@ pub struct Cli {
 
 #[derive(Debug, Args)]
 pub struct ConvertArgs {
-    #[arg(short, long)]
-    #[arg(default_value_t = SourceType::JSON)]
+    #[arg(short, long, default_value_t = SourceType::JSON)]
     pub from_type: SourceType,
     #[arg(short, long)]
     pub dest_type: SourceType,
     #[arg(short, long)]
-    pub value: String
+    pub value: String,
+    #[arg(long, default_value_t = false)]
+    pub pretty: bool
 }
 
 #[derive(Debug, Args)]
