@@ -29,7 +29,7 @@ impl Data for HttpData {
                 Ok(v) => Ok(v),
                 Err(_) => Err(ConversionError::new("Error during data conversion to JSON")),
             }
-            Err(e) => Err(ConversionError::new("Error from HTTP request")),
+            Err(_) => Err(ConversionError::new("Error from HTTP request")),
         }
 
     }
