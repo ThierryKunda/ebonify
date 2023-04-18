@@ -24,7 +24,7 @@ pub mod from {
     use super::EbnfTree;
 
     impl EbnfTree {
-        pub fn from_json(json_content: Value) -> Result<EbnfTree, JSONParsingError> {
+        pub fn from_json(json_content: Value) -> Result<EbnfTree, ConversionError> {
             let mut res = Self {
                 syntax_source_name: None,
                 nodes_count_per_definition: AssocRuleCounter::new(),
@@ -57,7 +57,7 @@ pub mod from {
                 }
                 return Ok(res);
             }
-            return Err(JSONParsingError);
+            return Err(ConversionError::new("Eror while parsing JSON"));
         }
 
         pub fn from_file(filepath: &str) -> Result<EbnfTree, ParsingError> {
