@@ -1,9 +1,3 @@
-// mod ebnf_syntax;
-// mod error;
-// mod parsing;
-// mod ast;
-// mod structure;
-// mod utils;
 mod cli;
 
 use cli::Commands;
