@@ -1,16 +1,17 @@
 use serde_json::Value;
+
 use crate::error::ConversionError;
+use crate::structure::builders::EbnfTreeBuilder;
 
 pub trait Data {
     fn get_json(&self) -> Result<Value, ConversionError>;
 }
 
-struct JsonData {
+pub struct JsonData {
     value: String
 }
 
-
-struct HttpData {
+pub struct HttpData {
     uri: String
 }
 
