@@ -14,6 +14,10 @@ struct HttpData {
     uri: String
 }
 
+pub struct FileData {
+    path: String
+}
+
 
 impl Data for JsonData {
     fn get_json(&self) -> Result<Value, ConversionError> {
@@ -40,5 +44,21 @@ impl Data for HttpData {
             }
             Err(_) => Err(ConversionError::new("Error from HTTP request")),
         }
+    }
+}
+
+impl FileData {
+    pub fn new(filepath: &str) -> Self {
+        Self { path: filepath.to_string() }
+    }
+}
+
+impl Data for FileData {
+    fn get_json(&self) -> Result<Value, ConversionError> {
+        match EbnfTreeBuilder::from_file(&self.path) {
+            Ok(t) => Ok(t.create_json_schema()),
+            Err(_) => Err(ConversionError::new("Error while parsing the file")),
+        }
+
     }
 }
