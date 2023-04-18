@@ -96,12 +96,16 @@ impl Counter<usize, u32> for RuleCounter {
         }
     }
 
+    #[allow(unused)]
     fn element_already_stored(&self, element: &usize) -> Option<bool> { None }
-
+    
+    #[allow(unused)]
     fn add_element_with_qty(&mut self, element: &usize, qty: u32) {}
-
+    
+    #[allow(unused)]
     fn remove_element_with_qty(&mut self, element: &usize, qty: u32) {}
-
+    
+    #[allow(unused)]
     fn get_associated_count(&self, element: Option<&usize>) -> Option<u32> {
         None
     }
