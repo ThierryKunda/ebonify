@@ -4,7 +4,7 @@ pub mod parsing;
 pub mod ebnf_syntax;
 pub mod ast;
 pub mod data_formatting;
-mod structure;
+pub mod structure;
 #[allow(unused)]
 mod utils;
 mod cli;
