@@ -48,6 +48,6 @@ impl Error for ConversionError {
 
 impl Display for ConversionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "The conversion between the two types is invalid.\n Reason : {}", self.message)
+        write!(f, "The conversion between the two types is invalid.\nReason : {}", self.message)
     }
 }
