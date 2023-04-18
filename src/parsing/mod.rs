@@ -5,10 +5,14 @@ use crate::ebnf_syntax::{Operator, Token};
 
 use regex;
 use std::fs;
+use std::path::Path;
 use std::ops::Deref;
 use std::rc::Rc;
+
 use crate::ebnf_syntax::*;
 use crate::error::ParsingError;
+
+use path_absolutize::*;
 /// Split the lines of an input string and return the result
 /// 
 /// # Arguments
@@ -55,14 +59,22 @@ pub fn split_lines(content: String) -> Vec<String> {
 /// );
 /// ```
 pub fn split_lines_from_file(filepath: &str) -> Result<Vec<String>, ParsingError> {
-    let file_content = fs::read_to_string(filepath);
-    match file_content {
-        Ok(ct) => {
-            Ok(split_lines(ct))
-        },
-        Err(_) => {
+    let p = Path::new(filepath);
+    match p.absolutize() {
+        Ok(v) => if let Some(path_abs) = v.to_str() {
+            let file_content = fs::read_to_string(path_abs);
+            match file_content {
+                Ok(ct) => {
+                    Ok(split_lines(ct))
+                },
+                Err(_) => {
+                    Err(ParsingError)
+                },
+            }
+        } else {
             Err(ParsingError)
         },
+        Err(_) => Err(ParsingError),
     }
 }
 
