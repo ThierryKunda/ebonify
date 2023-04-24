@@ -1,5 +1,5 @@
 use crate::ebnf_syntax::*;
-use crate::parsing::{brackets_paired, valid_single_operators, valid_dual_ref_operators};
+use crate::parsing::validation::{brackets_paired, valid_single_operators, valid_dual_ref_operators};
 
 /// Checks if the first operator has a higher priority than the second one
 pub fn has_highter_priority_to(op1: &Operator, op2: &Operator) -> bool {
@@ -21,7 +21,7 @@ pub fn has_highter_priority_to(op1: &Operator, op2: &Operator) -> bool {
 /// # Examples
 /// 
 /// ```
-/// use ebonify::parsing::{tokenize_rule_from_str, tokens_as_ref};
+/// use ebonify::parsing::pre_processing::{tokenize_rule_from_str, tokens_as_ref};
 /// use ebonify::ast::tokens::least_prior_is_unary;
 /// 
 /// let tokens_0 = tokenize_rule_from_str(String::from("{ 123 }"));

@@ -6,13 +6,14 @@ use serde_json::json;
 use crate::{
     utils::*,
     ebnf_syntax::*,
-    parsing::{
+    parsing::pre_processing::{
         tokenize_rule_from_str,
         tokens_as_ref,
-        rules_equals,
         tokenize_rule
     },
 };
+
+use crate::parsing::validation::rules_equals;
 use super::{tokens::*, rule::*, json::rule_from_json};
 
 #[test]

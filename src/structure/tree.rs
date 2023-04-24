@@ -20,7 +20,7 @@ pub mod from {
     use std::{collections::BTreeMap, path::Path, rc::Rc};
     use serde_json::Value;
 
-    use crate::{error::*, utils::AssocRuleCounter, ast::{json::{assoc_counter_from_json, btree_rule_from_json}, rule::{create_definition_tree, get_pure_tree}}, parsing::{split_lines_from_file, split_members, tokenize_rule_from_str, split_lines}, ebnf_syntax::Rule};
+    use crate::{error::*, utils::AssocRuleCounter, ast::{json::{assoc_counter_from_json, btree_rule_from_json}, rule::{create_definition_tree, get_pure_tree}}, parsing::pre_processing::{split_lines_from_file, split_members, tokenize_rule_from_str, split_lines}, ebnf_syntax::Rule};
     use super::EbnfTree;
 
     impl EbnfTree {

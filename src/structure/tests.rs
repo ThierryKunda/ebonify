@@ -1,4 +1,4 @@
-use crate::{ast::rule::*, parsing::tokenize_rule_from_str};
+use crate::{ast::rule::*, parsing::pre_processing::tokenize_rule_from_str};
 use super::builders::EbnfTreeBuilder;
 
 #[test]
