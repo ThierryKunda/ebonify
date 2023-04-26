@@ -1,12 +1,21 @@
 use std::fmt::{Display, Debug};
 use std::error::Error;
 
-#[derive(Debug)]
-pub struct ParsingError;
+
+#[derive(Debug, Clone)]
+pub struct ParsingError {
+    error_details: String
+}
+
+impl ParsingError {
+    pub fn new(error_details: &str) -> Self {
+        Self { error_details: error_details.to_string() }
+    }
+}
 
 impl Display for ParsingError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "The pre-processing failed")
+        write!(f, "The pre-processing failed : {}", &self.error_details)
     }
 }
 
@@ -42,9 +51,7 @@ impl ConversionError {
     }
 }
 
-impl Error for ConversionError {
-
-}
+impl Error for ConversionError {}
 
 impl Display for ConversionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

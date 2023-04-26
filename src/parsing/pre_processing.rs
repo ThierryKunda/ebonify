@@ -64,13 +64,13 @@ pub fn split_lines_from_file(filepath: &str) -> Result<Vec<String>, ParsingError
                     Ok(split_lines(ct))
                 },
                 Err(_) => {
-                    Err(ParsingError)
+                    Err(ParsingError::new("impossible to read the file"))
                 },
             }
         } else {
-            Err(ParsingError)
+            Err(ParsingError::new("valid unicode failed path for string slice generation"))
         },
-        Err(_) => Err(ParsingError),
+        Err(_) => Err(ParsingError::new("failed to get the absolute path of the file")),
     }
 }
 
