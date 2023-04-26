@@ -4,7 +4,7 @@ use std::ops::Deref;
 
 use crate::ebnf_syntax::*;
 
-/// Checks if a rule is validate from the tokenization çprocess.
+/// Checks if a rule is validate from the tokenization process.
 /// 
 /// The EBNF elements has to be well typed to be converted into semantic objects.
 /// 
