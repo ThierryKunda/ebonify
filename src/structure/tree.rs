@@ -62,10 +62,8 @@ pub mod from {
 
         pub fn from_file(filepath: &str) -> Result<EbnfTree, ParsingError> {
             let fp = Path::new(filepath);
-            let file_content = split_lines_from_file(filepath);
-            match file_content {
-                Ok(content) => {
-                    let mut pairs: Vec<(String, Rc<Rule>)> = Vec::new();
+            let file_content = split_lines_from_file(filepath)?;
+            let mut pairs: Vec<(String, Rc<Rule>)> = Vec::new();
                     let rulename_definition_pairs = split_members(content);
                     for (rule_name, mut definition) in rulename_definition_pairs {
                         // Removal of the semi-colon at the end of a definition
