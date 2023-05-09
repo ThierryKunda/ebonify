@@ -5,7 +5,7 @@ use crate::parsing::pre_processing::{tokenize_rule_from_str, split_members, toke
 use crate::utils::{Counter, diff_str};
 use crate::ebnf_syntax::*;
 use crate::error::{RuleError};
-use crate::parsing::validation::{brackets_paired, valid_dual_operators, valid_following_operators, valid_pure_single_operators};
+use crate::parsing::validation::{valid_dual_operators, valid_following_operators, valid_pure_single_operators};
 
 use super::tokens::*;
 
