@@ -83,6 +83,19 @@ pub mod from {
             })
         }
 
+        fn get_filename_error_handler_from_path(p: &Path) -> Result<String, SourcePathError> {
+            let file_name = p.file_name();
+            if let Some(v1) = file_name {
+                if let Some(string_slice) = v1.to_str() {
+                    return Ok(string_slice.to_string());
+                } else {
+                    return Err(SourcePathError::new("error : string slice is in invalid UTF-8"));
+                }
+            } else {
+                return Err(SourcePathError::new("error while getting final component"));
+            }
+        }
+
         pub fn from_file(filepath: &str) -> Result<EbnfTree, ParsingError> {
             let fp = Path::new(filepath);
             let file_content = split_lines_from_file(filepath)?;
@@ -99,12 +112,16 @@ pub mod from {
                         }
                     }
                     let mut res = EbnfTree::from(&pairs);
-                    let mut syntax_source_name = fp.file_name().unwrap().to_str().unwrap().to_string();
-                    for _ in 0..5 {
-                        syntax_source_name.pop();
+                    let syntax_source_name = Self::get_filename_error_handler_from_path(fp);
+                    if let Ok(mut s) = syntax_source_name {
+                        for _ in 0..5 {
+                            s.pop();
+                        }
+                        res.syntax_source_name = Some(s);
+                        Ok(res)
+                    } else {
+                        Err(ParsingError::new("error_details"))
                     }
-                    res.syntax_source_name = Some(syntax_source_name);
-                    Ok(res)
         }
     }
 

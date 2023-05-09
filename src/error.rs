@@ -66,3 +66,22 @@ impl Display for ConversionError {
         write!(f, "The conversion between the two types is invalid.\nReason : {}", self.message)
     }
 }
+
+#[derive(Debug)]
+pub struct SourcePathError {
+    error_details: String
+}
+
+impl SourcePathError {
+    pub fn new(error_details: &str) -> Self {
+        Self { error_details: error_details.to_string() }
+    }
+}
+
+impl Error for SourcePathError {}
+
+impl Display for SourcePathError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Error during path processing : {}", self.error_details)
+    }
+}
