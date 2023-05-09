@@ -5,6 +5,7 @@ use crate::parsing::pre_processing::{tokenize_rule_from_str, split_members, toke
 use crate::utils::{Counter, diff_str};
 use crate::ebnf_syntax::*;
 use crate::error::{RuleError};
+use crate::parsing::validation::{brackets_paired, valid_dual_operators, valid_following_operators, valid_pure_single_operators};
 
 use super::tokens::*;
 
@@ -407,7 +408,19 @@ pub fn predicate_single_result<PA, PR, VS, VD>(rule: &Rc<Rule>, pred_atomic: &PA
     }
 }
 
-pub fn create_rule_tree<'a>(rule: &'a Vec<Token>) -> Result<Rule, RuleError> {
+pub fn create_rule_tree(rule: &Vec<Token>) -> Result<Rule, RuleError> {
+    let dual_ops_are_valid = valid_dual_operators(rule);
+    let single_ops_are_valid = valid_pure_single_operators(rule);
+    let following_ops_are_valid = valid_following_operators(rule);
+    if !dual_ops_are_valid {
+        return Err(RuleError::new("at least a pair of dual operators is invalid"));
+    }
+    if !single_ops_are_valid {
+        return Err(RuleError::new("at least a single operator is invalid"));
+    }
+    if !following_ops_are_valid {
+        return Err(RuleError::new("at least a paire of following operators is invalid"));
+    }
     for tk in rule.iter() {
         if let Token::Invalid = tk {
             return Err(RuleError::new("there is (at least) an invalid token"));
