@@ -1,8 +1,8 @@
 use crate::{error::{ParsingError, ConversionError}, data_formatting::Data};
 use super::tree::EbnfTree;
 
-pub struct EbnfTreeBuilder {
-}
+/// Builder for creating ready-to-use [EbnfTree], from different sources
+pub struct EbnfTreeBuilder;
 
 impl EbnfTreeBuilder {
     pub fn from_file(path: &str) -> Result<EbnfTree, ParsingError> {
