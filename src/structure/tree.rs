@@ -24,6 +24,11 @@ pub mod from {
     use super::EbnfTree;
 
     impl EbnfTree {
+        /// Generate an EBNF tree from any JSON content
+        /// 
+        /// # Arguments
+        /// 
+        /// * json_content - JSON content typed as [Value] from [serde_json]
         pub fn from_json(json_content: Value) -> Result<EbnfTree, ConversionError> {
             let mut res = Self {
                 syntax_source_name: None,
