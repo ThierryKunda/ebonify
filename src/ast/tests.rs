@@ -195,11 +195,11 @@ fn create_rule_tree_test() {
     let tree_4 = create_rule_tree(&tokens_4);
     let tree_5 = create_rule_tree(&tokens_5);
     
-    match tree_0 {
+    match tree_0.unwrap() {
         Rule::Atomic(_, AtomicKind::Identifier) => assert!(true),
         _ => assert!(false),
     }
-    match tree_1 {
+    match tree_1.unwrap() {
         Rule::Single(sub, SingleKind::Repetition) => match sub.deref() {
             Rule::Ref(r) => match r.upgrade() {
                 Some(st) => if let Rule::Atomic(id, AtomicKind::Identifier) = st.deref() {
@@ -211,11 +211,11 @@ fn create_rule_tree_test() {
         }
         _ => assert!(false),
     }
-    match tree_2 {
+    match tree_2.unwrap() {
         Rule::Single(_, SingleKind::Grouping) => assert!(true),
         _ => assert!(false),
     }
-    match tree_3 {
+    match tree_3.unwrap() {
         Rule::Single(el, SingleKind::Optional) => match el.deref() {
             Rule::Dual(left, DualKind::Alternation, right) => match (left.deref(), right.deref()) {
                 (Rule::Ref(_), Rule::Ref(_)) => assert!(true),
@@ -226,7 +226,7 @@ fn create_rule_tree_test() {
         _ => assert!(false)
     }
 
-    match tree_4 {
+    match tree_4.unwrap() {
         Rule::Dual(a, DualKind::Exception, b) => match (a.deref(), b.deref()) {
             (Rule::Single(sub1, SingleKind::Grouping), Rule::Single(sub2, SingleKind::Grouping)) => match (sub1.deref(), sub2.deref()) {
                 (Rule::Dual(left, DualKind::Alternation, right), Rule::Ref(_)) => match (left.deref(), right.deref()) {
@@ -240,7 +240,7 @@ fn create_rule_tree_test() {
         _ => assert!(false),
     }
 
-    match tree_5 {
+    match tree_5.unwrap() {
         Rule::Dual(left, DualKind::Alternation, other) => match (left.deref(), other.deref()) {
         (Rule::Atomic(_, AtomicKind::Literal), Rule::Single(right, SingleKind::Grouping)) => match right.deref() {
             Rule::Dual(_, DualKind::Alternation, _) => assert!(true),
@@ -260,10 +260,10 @@ fn rule_without_grouping_test() {
     let tokens_2 = tokenize_rule_from_str(String::from("'abc' | 'def'"));
     let tokens_3 = tokenize_rule_from_str(String::from("( 'abc' | 'def' ) , '1234'"));
 
-    let tree_0 = create_rule_tree(&tokens_0);
-    let tree_1 = create_rule_tree(&tokens_1);
-    let tree_2 = create_rule_tree(&tokens_2);
-    let tree_3 = create_rule_tree(&tokens_3);
+    let tree_0 = create_rule_tree(&tokens_0).unwrap();
+    let tree_1 = create_rule_tree(&tokens_1).unwrap();
+    let tree_2 = create_rule_tree(&tokens_2).unwrap();
+    let tree_3 = create_rule_tree(&tokens_3).unwrap();
 
     let t0 = tree_without_grouping(Rc::new(tree_0));
     let t1 = tree_without_grouping(Rc::new(tree_1));
@@ -310,15 +310,15 @@ fn are_same_tree_test() {
     let tokens_c = tokenize_rule_from_str(String::from("('abc'|'def')"));
     let tokens_d = tokenize_rule_from_str(String::from("(foo|bar)-var"));
     
-    let tree_0 = create_rule_tree(&tokens_0);
-    let tree_1 = create_rule_tree(&tokens_1);
-    let tree_2 = create_rule_tree(&tokens_2);
-    let tree_3 = create_rule_tree(&tokens_3);
+    let tree_0 = create_rule_tree(&tokens_0).unwrap();
+    let tree_1 = create_rule_tree(&tokens_1).unwrap();
+    let tree_2 = create_rule_tree(&tokens_2).unwrap();
+    let tree_3 = create_rule_tree(&tokens_3).unwrap();
 
-    let tree_a = create_rule_tree(&tokens_a);
-    let tree_b = create_rule_tree(&tokens_b);
-    let tree_c = create_rule_tree(&tokens_c);
-    let tree_d = create_rule_tree(&tokens_d);
+    let tree_a = create_rule_tree(&tokens_a).unwrap();
+    let tree_b = create_rule_tree(&tokens_b).unwrap();
+    let tree_c = create_rule_tree(&tokens_c).unwrap();
+    let tree_d = create_rule_tree(&tokens_d).unwrap();
 
     assert!(are_same_tree(&tree_0, &tree_a, true, false));
     assert!(are_same_tree(&tree_1, &tree_b, true, false));
@@ -330,7 +330,7 @@ fn are_same_tree_test() {
 #[test]
 pub fn predicate_single_result_test() {
     let tokens = tokenize_rule_from_str(String::from("( 'abc' | 'def' )"));
-    let tree = get_pure_tree(create_definition_tree(&tokens));
+    let tree = get_pure_tree(create_definition_tree(&tokens).unwrap());
     let pr1 = |v: &Rule, res: bool| -> bool {
         match v.deref() {
             Rule::Dual(_, DualKind::Alternation, _) => true,
@@ -370,7 +370,7 @@ pub fn predicate_single_result_test() {
 #[test]
 pub fn counting_single_result_test() {
     let tokens = tokenize_rule_from_str(String::from("(ok - abc | 'def' ,  ok)"));
-    let tree = get_pure_tree(create_definition_tree(&tokens));
+    let tree = get_pure_tree(create_definition_tree(&tokens).unwrap());
     let check_if_id = |atom: &Rule| {
         if let Rule::Atomic(id, AtomicKind::Identifier) = atom.deref() {
             AssocRuleCounter::from(vec![(id.to_string(), 1)])
@@ -395,8 +395,13 @@ pub fn counting_single_result_test() {
 #[test]
 pub fn tree_with_id_ref_test() {
     let name = "integer".to_string();
-    let tree_from = get_pure_tree(create_definition_tree(&tokenize_rule_from_str("0|1|2".to_string())));
-    let tree = get_pure_tree(create_definition_tree(&tokenize_rule_from_str(String::from("integer,'.',integer"))));
+    let tree_from = get_pure_tree(
+        create_definition_tree(
+            &tokenize_rule_from_str("0|1|2".to_string())).unwrap());
+    let tree = get_pure_tree(
+        create_definition_tree(
+            &tokenize_rule_from_str(
+                String::from("integer,'.',integer"))).unwrap());
     let ref_to = Rc::new(Rule::Ref(Rc::downgrade(&tree_from)));
     let tree_res = tree_with_id_ref((&name, &tree_from), &tree);
     let tree_expected = Rc::new(
@@ -428,10 +433,10 @@ fn grammarize_repetition_test() {
             &tokenize_rule_from_str(String::from("ok | ok, same"))
         )
     ;
-    let gram_0 = grammarize_repetition(&rule_0);
+    let gram_0 = grammarize_repetition(&rule_0.unwrap());
     println!("{:?}", gram_0);
     println!("{:?}", rule_a);
-    let res = are_same_tree(&gram_0, &rule_a, false, false);
+    let res = are_same_tree(&gram_0, &rule_a.unwrap(), false, false);
     assert!(res);
 }
 
@@ -440,47 +445,47 @@ fn grammarize_exception_test() {
     let rule_0 =
         get_pure_tree(create_definition_tree(
             &tokenize_rule_from_str(String::from("'abcd' - 'bc'"))
-        ))
+        ).unwrap())
     ;
     let rule_1 =
         get_pure_tree(create_definition_tree(
             &tokenize_rule_from_str(String::from("'hdedldldod' - 'd'"))
-        ))
+        ).unwrap())
     ;
 
     let rule_2 =
         get_pure_tree(create_definition_tree(
             &tokenize_rule_from_str(String::from("'abcd' - ('a' | 'c')"))
-        ))
+        ).unwrap())
     ;
 
     let rule_3 =
         get_pure_tree(create_definition_tree(
             &tokenize_rule_from_str(String::from("('abcd' , 'ef') - ('a' | 'c')"))
-        ))
+        ).unwrap())
     ;
     
     let rule_a =
         get_pure_tree(create_definition_tree(
             &tokenize_rule_from_str(String::from("'ad'"))
-        ))
+        ).unwrap())
     ;
     let rule_b =
         get_pure_tree(create_definition_tree(
             &tokenize_rule_from_str(String::from("'hello'"))
-        ))
+        ).unwrap())
     ;
 
     let rule_c =
         get_pure_tree(create_definition_tree(
             &tokenize_rule_from_str(String::from("'bcd'|'abd'"))
-        ))
+        ).unwrap())
     ;
 
     let rule_d =
         get_pure_tree(create_definition_tree(
             &tokenize_rule_from_str(String::from("'bcdef'|'abdef'"))
-        ))
+        ).unwrap())
     ;
     
     let gram_0 = grammarize_exception(&rule_0);
@@ -512,33 +517,33 @@ fn grammarize_optional_test() {
     let rule_0 =
         get_pure_tree(create_definition_tree(
             &tokenize_rule_from_str(String::from("ok , [fine]"))
-        ))
+        ).unwrap())
     ;
     let rule_1 =
         get_pure_tree(create_definition_tree(
             &tokenize_rule_from_str(String::from("[yes] - [no]"))
-        ))
+        ).unwrap())
     ;
     let rule_2 =
         get_pure_tree(create_definition_tree(
             &tokenize_rule_from_str(String::from("[ yes ] - no"))
-        ))
+        ).unwrap())
     ;
 
     let rule_a =
     get_pure_tree(create_definition_tree(
         &tokenize_rule_from_str(String::from("ok | (ok , fine)"))
-    ))
+    ).unwrap())
     ;
     let rule_b =
     get_pure_tree(create_definition_tree(
         &tokenize_rule_from_str(String::from("yes | no | (yes - no)"))
-    ))
+    ).unwrap())
     ;  
     let rule_c =
     get_pure_tree(create_definition_tree(
         &tokenize_rule_from_str(String::from(" '' | (yes - no)"))
-    ))
+    ).unwrap())
     ;
 
     let gram_0 = grammarize_optional(&rule_0);
@@ -577,12 +582,12 @@ fn rule_from_json_test() {
     let expected_0 = 
         get_pure_tree(create_definition_tree(
             &tokenize_rule_from_str(String::from("hello"))
-        ))
+        ).unwrap())
     ;
     let expected_1 = 
         get_pure_tree(create_definition_tree(
             &tokenize_rule_from_str(String::from("ok , 'fine'"))
-        ))
+        ).unwrap())
     ;
 
     assert!(are_same_tree(&rule_0, &expected_0, true, false));

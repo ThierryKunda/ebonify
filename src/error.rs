@@ -22,11 +22,19 @@ impl Display for ParsingError {
 impl Error for ParsingError {}
 
 #[derive(Debug)]
-pub struct RuleError;
+pub struct RuleError {
+    error_details: String
+}
+
+impl RuleError {
+    pub fn new(details: &str) -> Self {
+        RuleError { error_details: details.to_string() }
+    }
+}
 
 impl Display for RuleError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "The rule is invalid")
+        write!(f, "The rule is invalid : {}", &self.error_details)
     }
 }
 

@@ -60,6 +60,29 @@ pub mod from {
             return Err(ConversionError::new("Eror while parsing JSON"));
         }
 
+        pub fn from_string(text: &str) -> Result<Self, ParsingError> {
+            let mut pairs: BTreeMap<String, Rc<Rule>> = BTreeMap::new();
+            let mut rules_by_line = split_lines(text.to_string());
+            for r  in rules_by_line.iter_mut() {
+                r.pop();
+            }
+            let rulename_definition_pairs = split_members(rules_by_line);
+            for (rule_name, definition) in rulename_definition_pairs {
+                let tokens = tokenize_rule_from_str(definition);
+                let maybe_def = create_definition_tree(&tokens);
+                match maybe_def {
+                    Ok(def) => { pairs.insert(rule_name, def); },
+                    Err(e) => { return Err(ParsingError::new(e.to_string().as_str())); },
+                }
+            }
+            Ok(EbnfTree {
+                syntax_source_name: None,
+                rules: pairs,
+                nodes_count_per_definition: AssocRuleCounter::new(),
+                identified_counts: AssocRuleCounter::new(),
+            })
+        }
+
         pub fn from_file(filepath: &str) -> Result<EbnfTree, ParsingError> {
             let fp = Path::new(filepath);
             let file_content = split_lines_from_file(filepath)?;
@@ -70,7 +93,10 @@ pub mod from {
                         definition.pop();
                         let tokens = tokenize_rule_from_str(definition);
                         let def = create_definition_tree(&tokens);
-                        pairs.push((rule_name, get_pure_tree(def)));
+                        match def {
+                            Ok(r) => pairs.push((rule_name, get_pure_tree(r))),
+                            Err(e) => return Err(ParsingError::new(e.to_string().as_str())),
+                        }
                     }
                     let mut res = EbnfTree::from(&pairs);
                     let mut syntax_source_name = fp.file_name().unwrap().to_str().unwrap().to_string();
@@ -87,27 +113,6 @@ pub mod from {
             let mut pairs: BTreeMap<String, Rc<Rule>> = BTreeMap::new();
             for (rule_name, definition) in rulename_definition_pairs {
                 pairs.insert(rule_name.to_string(), Rc::clone(&definition));
-            }
-            EbnfTree {
-                syntax_source_name: None,
-                rules: pairs,
-                nodes_count_per_definition: AssocRuleCounter::new(),
-                identified_counts: AssocRuleCounter::new(),
-            }
-        }
-    }
-    
-    impl From<&str> for EbnfTree {
-        fn from(text: &str) -> Self {
-            let mut pairs: BTreeMap<String, Rc<Rule>> = BTreeMap::new();
-            let mut rules_by_line = split_lines(text.to_string());
-            for r  in rules_by_line.iter_mut() {
-                r.pop();
-            }
-            let rulename_definition_pairs = split_members(rules_by_line);
-            for (rule_name, definition) in rulename_definition_pairs {
-                let tokens = tokenize_rule_from_str(definition);
-                pairs.insert(rule_name, create_definition_tree(&tokens));
             }
             EbnfTree {
                 syntax_source_name: None,

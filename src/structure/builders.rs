@@ -13,7 +13,7 @@ impl EbnfTreeBuilder {
     }
     
     pub fn from_plain_text(text: &str) -> Result<EbnfTree, ParsingError> {
-        let mut res = EbnfTree::from(text);
+        let mut res = EbnfTree::from_string(text)?;
         res.update_all_definition_nodes_count(true);
         res.update_identified_counts();
         Ok(res)

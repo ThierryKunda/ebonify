@@ -7,32 +7,32 @@ fn tree_from_file_test() {
     let char_rule = get_pure_tree(
         create_definition_tree(
             &tokenize_rule_from_str(String::from("'a'|'b'|'c'|'e'|'f'"))
-        )
+        ).unwrap()
     );
     let digit_rule = get_pure_tree(
         create_definition_tree(
             &tokenize_rule_from_str(String::from("'0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'"))
-        )
+        ).unwrap()
     );
     let string_rule = get_pure_tree(
         create_definition_tree(
             &tokenize_rule_from_str(String::from("{ char },  [ { ( char | digit ) } ]"))
-        )
+        ).unwrap()
     );
     let positive_number_rule = get_pure_tree(
         create_definition_tree(
             &tokenize_rule_from_str(String::from("{ digit }"))
-        )
+        ).unwrap()
     );
     let integer_rule = get_pure_tree(
         create_definition_tree(
             &tokenize_rule_from_str(String::from("[ \"-\" ], positive_number"))
-        )
+        ).unwrap()
     );
     let float_rule = get_pure_tree(
         create_definition_tree(
             &tokenize_rule_from_str(String::from("integer, '.', integer"))
-        )
+        ).unwrap()
     );
 
     assert!(are_same_tree(tree.rules.get("char").unwrap(), &char_rule, true, false));

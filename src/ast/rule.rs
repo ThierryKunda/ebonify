@@ -3,8 +3,8 @@ use std::rc::{Rc, Weak};
 
 use crate::parsing::pre_processing::{tokenize_rule_from_str, split_members, tokens_as_ref};
 use crate::utils::{Counter, diff_str};
-
 use crate::ebnf_syntax::*;
+use crate::error::{RuleError};
 
 use super::tokens::*;
 
@@ -334,9 +334,9 @@ pub fn same_dual_kind(k1: &DualKind, k2: &DualKind) -> bool {
 }
 
 /// Returns a tree created from a list of tokens
-pub fn create_definition_tree<'a>(rule: &'a Vec<Token>) -> Rc<Rule> {
-    let rule_tree = create_rule_tree(rule);
-    tree_without_grouping(Rc::new(rule_tree))
+pub fn create_definition_tree<'a>(rule: &'a Vec<Token>) -> Result<Rc<Rule>, RuleError> {
+    let rule_tree = create_rule_tree(rule)?;
+    Ok(tree_without_grouping(Rc::new(rule_tree)))
 }
 
 pub fn tree_without_grouping(rule: Rc<Rule>) -> Rc<Rule> {
@@ -407,11 +407,16 @@ pub fn predicate_single_result<PA, PR, VS, VD>(rule: &Rc<Rule>, pred_atomic: &PA
     }
 }
 
-pub fn create_rule_tree<'a>(rule: &'a Vec<Token>) -> Rule {
+pub fn create_rule_tree<'a>(rule: &'a Vec<Token>) -> Result<Rule, RuleError> {
+    for tk in rule.iter() {
+        if let Token::Invalid = tk {
+            return Err(RuleError::new("there is (at least) an invalid token"));
+        }
+    }
     let rule_as_ref: Vec<&Token> = tokens_as_ref(rule);
     let rule_with_prior_brackets = with_priority_parentheses(rule_as_ref);
     let res = create_rule_tree_by_ref(rule_with_prior_brackets);
-    res
+    Ok(res)
 }
 
 pub fn create_rule_tree_by_ref(rule: Vec<&Token>) -> Rule {
@@ -468,13 +473,13 @@ pub fn create_rule_tree_by_ref(rule: Vec<&Token>) -> Rule {
 }
 
 /// Returns associations of name-definition for each definition stored in a list
-pub fn create_trees(definitions: Vec<String>) -> Vec<(String, Rc<Rule>)> {   
+pub fn create_trees(definitions: Vec<String>) -> Result<Vec<(String, Rc<Rule>)>, RuleError> {   
     let mut trees: Vec<(String, Rc<Rule>)> = Vec::new();
     let name_def_pairs = split_members(definitions);
     for def in name_def_pairs {
         let r = tokenize_rule_from_str(def.1);
-        let t = create_definition_tree(&r);
+        let t = create_definition_tree(&r)?;
         trees.push((def.0, t));
     }
-    trees
+    Ok(trees)
 }
