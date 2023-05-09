@@ -8,6 +8,7 @@ use crate::utils::{AssocRuleCounter, Counter, RuleCounter};
 use std::collections::BTreeMap;
 use std::rc::{Rc, Weak};
 
+/// Tree gathering the structure of the langage described using the EBNF syntax
 #[derive(Debug)]
 pub struct EbnfTree {
     pub syntax_source_name: Option<String>,
