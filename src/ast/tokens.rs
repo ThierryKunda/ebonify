@@ -12,7 +12,7 @@ pub fn has_highter_priority_to(op1: &Operator, op2: &Operator) -> bool {
     }
 }
 
-/// Cheks if the least prior operator is a unary-type one
+/// Checks if the least prior operator is a unary-type one
 /// 
 /// # Arguments
 /// 
