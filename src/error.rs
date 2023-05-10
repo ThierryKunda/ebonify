@@ -85,3 +85,24 @@ impl Display for SourcePathError {
         write!(f, "Error during path processing : {}", self.error_details)
     }
 }
+
+#[derive(Debug)]
+pub struct ParserError {
+    error_details: String
+}
+
+impl ParserError {
+    pub fn new(error_details: &str) -> Self {
+        Self {
+            error_details: error_details.to_string(),
+        }
+    }
+}
+
+impl Error for ParserError {}
+
+impl Display for ParserError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Error while creating the parser : {}", self.error_details)
+    }
+}
