@@ -12,6 +12,7 @@ use std::rc::{Rc, Weak};
 #[derive(Debug)]
 pub struct EbnfTree {
     pub syntax_source_name: Option<String>,
+    pub axiom: Option<String>,
     pub nodes_count_per_definition: AssocRuleCounter,
     pub rules: BTreeMap<String, Rc<Rule>>,
     pub identified_counts: AssocRuleCounter,
@@ -36,6 +37,7 @@ pub mod from {
                 nodes_count_per_definition: AssocRuleCounter::new(),
                 rules: BTreeMap::new(),
                 identified_counts: AssocRuleCounter::new(),
+                axiom: None,
             };
             if let Value::Object(m) = json_content {
                 if let Some(Value::String(s)) = m.get(&String::from("syntax_source_name")) {
@@ -44,13 +46,16 @@ pub mod from {
                 if let (
                     Some(nodes_count_per_definition),
                     Some(rules),
+                    Some(axiom),
                     Some(identified_counts)
                 ) = (
                     m.get(&String::from("nodes_count_per_definition")),
                     m.get(&String::from("rules")),
+                    m.get(&String::from("axiom")),
                     m.get(&String::from("identified_counts"))
                     
                 ) {
+                    res.axiom = axiom.as_str().map(|v| v.to_string());
                     if let Some(v) = assoc_counter_from_json(nodes_count_per_definition) {
                         res.nodes_count_per_definition = v;
                     }
@@ -66,7 +71,7 @@ pub mod from {
             return Err(ConversionError::new("Eror while parsing JSON"));
         }
 
-        pub fn from_string(text: &str) -> Result<Self, ParsingError> {
+        pub fn from_string(text: &str, axiom: &str) -> Result<Self, ParsingError> {
             let mut pairs: BTreeMap<String, Rc<Rule>> = BTreeMap::new();
             let mut rules_by_line = split_lines(text.to_string());
             for r  in rules_by_line.iter_mut() {
@@ -86,6 +91,7 @@ pub mod from {
                 rules: pairs,
                 nodes_count_per_definition: AssocRuleCounter::new(),
                 identified_counts: AssocRuleCounter::new(),
+                axiom: Some(axiom.to_string()),
             })
         }
 
@@ -142,18 +148,20 @@ pub mod from {
                 rules: pairs,
                 nodes_count_per_definition: AssocRuleCounter::new(),
                 identified_counts: AssocRuleCounter::new(),
+                axiom: None,
             }
         }
     }
 }
 
 impl EbnfTree {
-    pub fn new(source_name: &str) -> Self {
+    pub fn new(source_name: &str, axiom: &str) -> Self {
         EbnfTree {
             syntax_source_name: Some(source_name.to_string()),
             nodes_count_per_definition: AssocRuleCounter::new(),
             rules: BTreeMap::new(),
-            identified_counts: AssocRuleCounter::new()
+            identified_counts: AssocRuleCounter::new(),
+            axiom: Some(axiom.to_string())
         }
     }
 

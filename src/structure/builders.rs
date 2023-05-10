@@ -12,8 +12,8 @@ impl EbnfTreeBuilder {
         Ok(res)
     }
     
-    pub fn from_plain_text(text: &str) -> Result<EbnfTree, ParsingError> {
-        let mut res = EbnfTree::from_string(text)?;
+    pub fn from_plain_text(text: &str, axiom: &str) -> Result<EbnfTree, ParsingError> {
+        let mut res = EbnfTree::from_string(text, axiom)?;
         res.update_all_definition_nodes_count(true);
         res.update_identified_counts();
         Ok(res)
