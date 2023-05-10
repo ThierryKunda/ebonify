@@ -5,7 +5,7 @@ use crate::ebnf_syntax::{Rule, AtomicKind};
 enum ParsingStatus {
     BeforeStarting,
     OnGoing,
-    Acceptation,
+    Success,
     Failure
 }
 
